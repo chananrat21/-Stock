@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger • Stock Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#eaf5ec; --bg2:#f4faf5; --card:#ffffff; --line:#d7e8da;
+  --ink:#16241b; --sub:#5c7566; --green:#1f6b3f; --green-dk:#123f26; --green-lt:#e3f3e6;
+  --amber:#8a6d1f; --amber-bg:#fdf3d9; --red:#b23a3a; --red-bg:#fbe4e4;
+  --radius:14px;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Thai','Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100%}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.brand-eyebrow{font-size:11px;letter-spacing:.08em;color:var(--red);font-weight:700;margin-bottom:4px}
+.brand h1{font-size:28px;margin:0 0 6px;font-weight:800;color:var(--green-dk)}
+.brand p{margin:0;color:var(--sub);font-size:13.5px;max-width:520px}
+.user{display:flex;align-items:center;gap:10px}
+.user img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#cfe3d3}
+.user .name{font-weight:700;font-size:13.5px}
+.user .tel{font-size:12px;color:var(--sub)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 18px;align-items:center}
+.tab-btn{background:var(--card);border:1px solid var(--line);color:var(--green-dk);padding:9px 16px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
+.tab-btn.active{background:var(--green-dk);color:#fff;border-color:var(--green-dk)}
+.searchbar{margin-left:auto;display:flex;gap:8px;align-items:center}
+.searchbar input{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;font-size:13px;width:220px;font-family:inherit}
+.iconbtn{border:1px solid var(--line);background:var(--card);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green-dk)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;transition:border-color .15s}
+.stat:hover{border-color:var(--green)}
+.stat.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.stat .lbl{font-size:12.5px;color:var(--sub);margin-bottom:8px}
+.stat .num{font-size:26px;font-weight:800;color:var(--green-dk)}
+.stat .sub{font-size:11.5px;color:var(--sub);margin-top:4px}
+.two-col{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start}
+.section-title{font-size:16px;font-weight:800;margin:0 0 3px;color:var(--green-dk)}
+.section-sub{font-size:12.5px;color:var(--sub);margin:0 0 14px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--sub);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:10px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+.pill{padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
+.pill.ok{background:var(--green-lt);color:var(--green-dk)}
+.pill.low{background:var(--amber-bg);color:var(--amber)}
+.pill.out{background:var(--red-bg);color:var(--red)}
+.recent{display:flex;flex-direction:column;gap:14px;max-height:430px;overflow-y:auto}
+.recent-item{display:flex;gap:10px;font-size:13px}
+.dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.dot.in{background:var(--green-lt);color:var(--green-dk)}
+.dot.out{background:var(--red-bg);color:var(--red)}
+.recent-item .name{font-weight:700}
+.recent-item .meta{color:var(--sub);font-size:11.5px;margin-top:2px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+label{display:block;font-size:12.5px;font-weight:700;color:var(--green-dk);margin-bottom:6px}
+select,input[type=text],input[type=number],textarea,input[type=date]{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;background:var(--bg2)}
+textarea{resize:vertical;min-height:70px}
+.stock-box{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:13px;color:var(--sub)}
+.stock-box b{font-size:20px;color:var(--green-dk)}
+.imgbox{border:1.5px dashed var(--line);border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2);cursor:pointer;position:relative}
+.imgbox img{width:100%;height:100%;object-fit:contain}
+.imgbox .ph{font-size:12px;color:var(--sub);text-align:center;padding:8px}
+.btn{border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
+.btn.primary{background:var(--green-dk);color:#fff}
+.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--green-dk)}
+.btn.sm{padding:6px 12px;font-size:12px;border-radius:8px}
+.btn.red{background:var(--red);color:#fff}
+.btn.green{background:var(--green);color:#fff}
+.actions-row{display:flex;gap:10px}
+.tip-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;font-size:12.5px;color:var(--sub);line-height:1.7}
+.tip-card h4{margin:0 0 8px;font-size:13.5px;color:var(--green-dk)}
+.tip-card .note{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.manage-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+.side-edit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.side-edit h3{margin:0 0 3px;font-size:15px;color:var(--green-dk)}
+.side-edit p{margin:0 0 14px;font-size:12px;color:var(--sub)}
+.old-val{color:var(--red);font-weight:800;font-size:15px}
+.row-editing td{background:var(--green-dk)!important;color:#fff}
+.row-editing .pill{color:var(--ink)}
+footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--sub)}
+footer .flinks{display:flex;gap:20px}
+.empty{padding:40px 10px;text-align:center;color:var(--sub);font-size:13px}
+.dash-tabs{display:flex;gap:8px;margin-bottom:16px}
+.dash-tabs button{background:var(--bg2);border:1px solid var(--line);padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--green-dk)}
+.dash-tabs button.on{background:var(--green-dk);color:#fff}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+select.prodpick{background:var(--bg2)}
+@media (max-width:880px){
+  .two-col,.manage-grid,.form-grid{grid-template-columns:1fr}
+  .grid4,.kpi-row{grid-template-columns:1fr 1fr}
+  .searchbar{margin-left:0;width:100%}
+  .searchbar input{flex:1}
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1712;--bg2:#132019;--card:#152219;--line:#24382b;--ink:#e7f2ea;--sub:#8fa896;
+    --green-lt:#173926;--amber-bg:#2e2610;--red-bg:#301616;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1712;--bg2:#132019;--card:#152219;--line:#24382b;--ink:#e7f2ea;--sub:#8fa896;
+  --green-lt:#173926;--amber-bg:#2e2610;--red-bg:#301616;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="brand">
+      <div class="brand-eyebrow">LEDGER • STOCK CONTROL</div>
+      <h1>คลังสินค้า</h1>
+      <p>ระบบสมุดบัญชี สำหรับรับเข้า เบิกจ่าย ตรวจสอบคงเหลือ และติดตามความเคลื่อนไหวของวัสดุอุปกรณ์ภายในสำนักงาน</p>
+    </div>
+    <div class="user">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='20' fill='%23123f26'/%3E%3Ctext x='20' y='26' font-family='Inter,sans-serif' font-size='15' font-weight='700' fill='%23fff' text-anchor='middle'%3ETK%3C/text%3E%3C/svg%3E" alt="">
+      <div><div class="name">Mr. Thavrith Khmer</div><div class="tel">(+855) 69 927 112</div></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn" data-tab="overview">ภาพรวมคลัง</button>
+    <button class="tab-btn" data-tab="move">เบิก / รับสินค้า</button>
+    <button class="tab-btn" data-tab="manage">จัดการสต๊อก</button>
+    <button class="tab-btn" data-tab="history">ประวัติรายการ</button>
+    <button class="tab-btn" data-tab="dash">Dashboard</button>
+    <div class="searchbar">
+      <input id="searchInput" placeholder="ค้นหาชื่อสินค้า...">
+      <div class="iconbtn" onclick="resetDemo()" title="รีเซ็ตข้อมูลตัวอย่าง">⟳</div>
+    </div>
+  </div>
+
+  <div id="view"></div>
+
+  <footer>
+    <div class="flinks">
+      <span>🏠 หน้าหลัก</span><span>📋 สต๊อกพัสดุ</span><span>⇅ รายการเบิกจ่าย</span><span>⚙ ตั้งค่า</span>
+    </div>
+    <div>© 2026 Ledger Inc. ระบบบวงคุมคลังสินค้าสำนักงาน</div>
+  </footer>
+</div>
+
+<script>
+/* ---------- Data layer ---------- */
+const LS_KEY='ledger_stock_v1';
+function mockImg(label,bg){
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='${bg}'/><circle cx='100' cy='82' r='40' fill='#ffffff' opacity='.18'/><text x='100' y='95' font-family='Inter,sans-serif' font-size='34' font-weight='800' fill='#ffffff' text-anchor='middle'>${label}</text><text x='100' y='128' font-family='Inter,sans-serif' font-size='13' fill='#ffffff' opacity='.85' text-anchor='middle'>ตัวอย่างสินค้า</text></svg>`;
+  return 'data:image/svg+xml,'+encodeURIComponent(svg);
+}
+function seedData(){
+  const now=Date.now();
+  const products=[
+    {id:'p1',name:'เคมีภัณฑ์ปรับปรุงคุณภาพดิน (pH12)',unit:'กระสอบ',initial:30,current:24,img:mockImg('pH12','#1f6b3f'),mfg:'2026-05-10',expiry:'2026-11-15'},
+    {id:'p2',name:'ปุ๋ยกระถิน 16-16-16',unit:'กระสอบ',initial:80,current:58,img:mockImg('16-16-16','#2f7d46'),mfg:'2026-06-01',expiry:'2027-06-01'},
+    {id:'p3',name:'มูลชี้วัว SPRING',unit:'กระสอบ',initial:20,current:0,img:mockImg('SPRING','#8a5a2f'),mfg:'2026-04-05',expiry:'2026-10-05'},
+    {id:'p4',name:'โครออแกนิก สูตรบำรุงผล เพิ่มหวาน',unit:'ถัง',initial:100,current:76,img:mockImg('ออร์แกนิก','#3f8a5b'),mfg:'2026-07-20',expiry:'2027-01-20'},
+    {id:'p5',name:'ปุ๋ยอินทรีย์ ออสโมโค้ท 13-13-13',unit:'กล่อง',initial:35,current:18,img:mockImg('13-13-13','#4a9563'),mfg:'2026-04-30',expiry:'2026-10-30'},
+    {id:'p6',name:'สารชีวอินทรีย์ ฮูมิคส์ สูตรเร่งดอก เพิ่มการติดผล',unit:'ขวด',initial:40,current:12,img:mockImg('ฮูมิคส์','#6b8a2f'),mfg:'2026-03-20',expiry:'2026-09-20'},
+    {id:'p7',name:'ปุ๋ยอินทรีย์เม็ดน้ำค้างดาว TPI',unit:'กระสอบ',initial:25,current:5,img:mockImg('TPI','#2f6b52'),mfg:'2026-09-01',expiry:'2027-03-01'},
+  ];
+  const tx=[
+    {id:'t1',pid:'p1',type:'out',qty:6,note:'ฝ่ายจุรงศ์',ts:now-3*864e5},
+    {id:'t2',pid:'p2',type:'out',qty:22,note:'ฝ่ายบรรจุ',ts:now-5*864e5},
+    {id:'t3',pid:'p3',type:'out',qty:20,note:'แผนกโภช',ts:now-7*864e5},
+    {id:'t4',pid:'p4',type:'out',qty:24,note:'จัดส่งกลาง',ts:now-9*864e5},
+    {id:'t5',pid:'p5',type:'out',qty:17,note:'ฝ่ายสวนบุ',ts:now-11*864e5},
+    {id:'t6',pid:'p6',type:'in',qty:12,note:'ยอดรับเข้าคลัง',ts:now-13*864e5},
+  ];
+  return {products,tx};
+}
+function loadData(){
+  try{const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw);}catch(e){}
+  const d=seedData(); saveData(d); return d;
+}
+function saveData(d){ try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){} }
+let DB=loadData();
+function resetDemo(){ DB=seedData(); saveData(DB); render(); }
+
+function fmt(n){ return new Intl.NumberFormat('th-TH').format(n); }
+function dateStr(ts){ const d=new Date(ts); return d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}); }
+function statusOf(p){ if(p.current<=0) return {c:'out',t:'สินค้าหมด'}; if(p.current<=5) return {c:'low',t:'ใกล้หมด'}; return {c:'ok',t:'พร้อมใช้'}; }
+function monthsUntil(dateStr){
+  if(!dateStr) return null;
+  const now=new Date(), exp=new Date(dateStr);
+  let m=(exp.getFullYear()-now.getFullYear())*12+(exp.getMonth()-now.getMonth());
+  if(exp.getDate()<now.getDate()) m-=1;
+  return m;
+}
+function expiryTag(p){
+  const m=monthsUntil(p.expiry);
+  if(m===null) return '';
+  if(m<0) return `<div style="color:var(--red);font-size:11.5px;margin-top:3px;font-weight:700">⚠ หมดอายุแล้ว ${Math.abs(m)} เดือนก่อน</div>`;
+  if(m<=3) return `<div style="color:var(--red);font-size:11.5px;margin-top:3px;font-weight:700">⚠ ใกล้หมดอายุอีก ${m} เดือน</div>`;
+  return '';
+}
+
+let activeTab='overview';
+let overviewFilter='all';
+function setOverviewFilter(f){ overviewFilter=f; render(); }
+document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab; render();}));
+document.getElementById('searchInput').addEventListener('input',render);
+
+/* ---------- Renderers ---------- */
+function render(){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
+  const view=document.getElementById('view');
+  if(activeTab==='overview') view.innerHTML=renderOverview();
+  else if(activeTab==='move') { view.innerHTML=renderMove(); bindMove(); }
+  else if(activeTab==='manage'){ view.innerHTML=renderManage(); bindManage(); }
+  else if(activeTab==='history') view.innerHTML=renderHistory();
+  else if(activeTab==='dash'){ view.innerHTML=renderDash(); bindDash(); }
+}
+
+function renderOverview(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  let list=DB.products.filter(p=>p.name.toLowerCase().includes(q));
+  const total=DB.products.length;
+  const totalQty=DB.products.reduce((s,p)=>s+p.current,0);
+  const low=DB.products.filter(p=>p.current>0&&p.current<=5).length;
+  const out=DB.products.filter(p=>p.current<=0).length;
+  if(overviewFilter==='low') list=list.filter(p=>p.current>0&&p.current<=5);
+  else if(overviewFilter==='out') list=list.filter(p=>p.current<=0);
+  else if(overviewFilter==='total') list=list.filter(p=>p.current>5);
+  const recent=[...DB.tx].sort((a,b)=>b.ts-a.ts).slice(0,7);
+  const titles={all:'รายการคงเหลือ',total:'รายการคงเหลือ (พร้อมใช้)',low:'รายการใกล้หมด',out:'รายการสินค้าหมด'};
+  return `
+  <div class="grid4">
+    <div class="stat ${overviewFilter==='total'?'on':''}" onclick="setOverviewFilter('total')"><div class="lbl">รายการทั้งหมด</div><div class="num">${total} รายการ</div><div class="sub">หมวดหมู่พัสดุคงเหลือ</div></div>
+    <div class="stat ${overviewFilter==='all'?'on':''}" onclick="setOverviewFilter('all')"><div class="lbl">จำนวนคงเหลือรวม</div><div class="num">${fmt(totalQty)}</div><div class="sub">ทุกหน่วยนับรวมกัน</div></div>
+    <div class="stat ${overviewFilter==='low'?'on':''}" onclick="setOverviewFilter('low')"><div class="lbl">ใกล้หมด</div><div class="num">${low}</div><div class="sub">เหลือไม่เกิน 5 หน่วย</div></div>
+    <div class="stat ${overviewFilter==='out'?'on':''}" onclick="setOverviewFilter('out')"><div class="lbl">สินค้าหมด</div><div class="num">${out}</div><div class="sub">ต้องรับดำเนินการเติมสินค้า</div></div>
+  </div>
+  <div class="two-col">
+    <div class="card">
+      <div class="section-title">${titles[overviewFilter]}</div>
+      <div class="section-sub">แสดงข้อมูลพัสดุที่อยู่ในระบบจัดเก็บขณะนี้ ${overviewFilter!=='all'?'· <a href="#" onclick="setOverviewFilter(\'all\');return false;" style="color:var(--green-dk);font-weight:700">ล้างตัวกรอง</a>':''}</div>
+      <table><thead><tr><th>ชื่อสินค้า</th><th>หน่วยนับ</th><th>ยอดตั้งต้น</th><th>คงเหลือ</th><th>สถานะ</th></tr></thead><tbody>
+      ${list.map(p=>{const s=statusOf(p);return `<tr><td>${p.name}${expiryTag(p)}</td><td>${p.unit}</td><td>${fmt(p.initial)}</td><td><b>${fmt(p.current)}</b></td><td><span class="pill ${s.c}">${s.t}</span></td></tr>`}).join('')||`<tr><td colspan=5 class="empty">ไม่พบสินค้า</td></tr>`}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="section-title">รายการล่าสุด</div>
+      <div class="section-sub">ความเคลื่อนไหวล่าสุดในคลังสินค้า</div>
+      <div class="recent">
+      ${recent.map(t=>{const p=DB.products.find(x=>x.id===t.pid); if(!p)return'';return `
+        <div class="recent-item"><div class="dot ${t.type}">${t.type==='in'?'เข้า':'ออก'}</div>
+        <div><div class="name">${p.name}</div><div class="meta">${dateStr(t.ts)} · ${t.note||'-'}</div></div></div>`}).join('')||`<div class="empty">ไม่มีรายการ</div>`}
+      </div>
+    </div>
+  </div>`;
+}
+
+function productOptions(sel){
+  return DB.products.map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${p.name}</option>`).join('');
+}
+
+function renderMove(){
+  return `
+  <div class="two-col">
+    <div class="card">
+      <div class="section-title">จัดการความเคลื่อนไหว</div>
+      <div class="section-sub">บันทึกรายการนำเข้า หรือเบิกจ่ายสินค้า</div>
+      <div class="form-grid">
+        <div><label>ประเภทรายการ</label>
+          <select id="mvType"><option value="out">เบิกจ่ายสินค้า</option><option value="in">นำเข้าสินค้า (สินค้าใหม่)</option></select>
+        </div>
+        <div><label id="mvProdLabel">สินค้า</label>
+          <select id="mvProd">${productOptions(DB.products[0]?.id)}</select>
+          <input type="text" id="mvProdNew" placeholder="พิมพ์ชื่อสินค้าใหม่..." style="display:none">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><label>วันที่ผลิต</label><input type="date" id="mvDateStart"></div>
+        <div><label>วันที่หมดอายุ</label><input type="date" id="mvDateEnd"></div>
+      </div>
+      <div class="stock-box"><span>คงเหลือปัจจุบัน</span><b id="mvStock">0</b></div>
+      <div id="mvInfoRow" class="stock-box" style="display:none"><span id="mvInfoText"></span></div>
+      <div class="form-grid">
+        <div>
+          <label id="mvImgLabel">รูปสินค้า</label>
+          <div class="imgbox" id="mvImgBox" onclick="mvImgClick()">
+            <div class="ph">คลิกเพื่ออัปโหลดรูปสินค้าใหม่</div>
+          </div>
+          <input type="file" id="mvFile" accept="image/*" style="display:none">
+        </div>
+        <div>
+          <label>จำนวนพัสดุ</label>
+          <input type="number" id="mvQty" placeholder="ระบุจำนวนที่ต้องการ...">
+          <div style="margin-top:14px"><label>หมายเหตุความเคลื่อนไหว</label>
+          <textarea id="mvNote" placeholder="ระบุเหตุผล, เลขที่เอกสาร หรือวัตถุประสงค์"></textarea></div>
+        </div>
+      </div>
+      <div id="mvNewFields" style="display:none">
+        <div class="form-grid">
+          <div><label>หน่วยนับ</label><input type="text" id="mvNewUnit" placeholder="เช่น กระสอบ, กล่อง, ขวด"></div>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn primary" onclick="saveMove()">บันทึกรายการ</button>
+        <button class="btn ghost" onclick="render()">ล้างข้อมูล</button>
+      </div>
+    </div>
+    <div class="tip-card">
+      <h4>ข้อแนะนำการใช้งาน</h4>
+      <div>ระบบจะตรวจสอบยอดคงเหลือก่อนบันทึกรายการ และป้องกันไม่ให้ยอดสินค้าติดลบในระบบคลัง</div>
+      <div class="note"><b style="color:var(--green-dk)">STOCK NOTE</b><br>หากยอดจริงไม่ตรงกับระบบ ให้ใช้เมนู 'จัดการสต๊อก' เพื่อปรับยอดสินค้าจากการตรวจนับสินค้าคงคลังรอบเดือน</div>
+    </div>
+  </div>`;
+}
+let mvCurrentIsIn=false;
+function mvImgClick(){ if(mvCurrentIsIn) document.getElementById('mvFile').click(); }
+function bindMove(){
+  const typeSel=document.getElementById('mvType'), prodSel=document.getElementById('mvProd');
+  const prodNew=document.getElementById('mvProdNew'), prodLabel=document.getElementById('mvProdLabel');
+  const stockEl=document.getElementById('mvStock'), imgBox=document.getElementById('mvImgBox');
+  const newFields=document.getElementById('mvNewFields'), imgLabel=document.getElementById('mvImgLabel');
+  const infoRow=document.getElementById('mvInfoRow'), infoText=document.getElementById('mvInfoText');
+  function refresh(){
+    const isIn=typeSel.value==='in';
+    mvCurrentIsIn=isIn;
+    newFields.style.display=isIn?'block':'none';
+    document.getElementById('mvDateStart').disabled=!isIn;
+    document.getElementById('mvDateEnd').disabled=!isIn;
+    document.getElementById('mvQty').placeholder=isIn?'ระบุจำนวนสินค้าใหม่ที่นำเข้า...':'ระบุจำนวนที่ต้องการเบิก...';
+    if(isIn){
+      prodLabel.textContent='สินค้า (พิมพ์ชื่อสินค้าใหม่)';
+      prodSel.style.display='none'; prodNew.style.display='block';
+      imgLabel.textContent='รูปสินค้า (สินค้าใหม่)';
+      imgBox.innerHTML='<div class="ph">คลิกเพื่ออัปโหลดรูปสินค้าใหม่</div>';
+      imgBox.style.cursor='pointer';
+      stockEl.textContent='0';
+      infoRow.style.display='none';
+      document.getElementById('mvDateStart').value=''; document.getElementById('mvDateEnd').value='';
+    } else {
+      prodLabel.textContent='สินค้า';
+      prodSel.style.display='block'; prodNew.style.display='none';
+      const p=DB.products.find(x=>x.id===prodSel.value);
+      stockEl.textContent=fmt(p?p.current:0);
+      imgLabel.textContent='รูปสินค้า (ข้อมูลเดิม)';
+      imgBox.style.cursor='default';
+      imgBox.innerHTML = p&&p.img? `<img src="${p.img}">` : `<div class="ph">ไม่มีรูปสินค้าที่บันทึกไว้</div>`;
+      infoRow.style.display='flex';
+      document.getElementById('mvDateStart').value=p&&p.mfg?p.mfg:'';
+      document.getElementById('mvDateEnd').value=p&&p.expiry?p.expiry:'';
+      const expTag=p?expiryTag(p).replace(/<div[^>]*>/,'').replace('</div>',''):'';
+      infoText.innerHTML = p? `หน่วยนับ: <b>${p.unit}</b>${p.mfg?` · วันที่ผลิต: <b>${p.mfg}</b>`:''}${p.expiry?` · วันหมดอายุ: <b>${p.expiry}</b>`:''}${expTag?` <span style="color:var(--red);font-weight:700">${expTag}</span>`:''}` : '';
+    }
+  }
+  typeSel.addEventListener('change',refresh);
+  prodSel.addEventListener('change',refresh);
+  document.getElementById('mvFile').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ imgBox.innerHTML=`<img src="${r.result}">`; imgBox.dataset.data=r.result; };
+    r.readAsDataURL(f);
+  });
+  refresh();
+}
+function saveMove(){
+  const type=document.getElementById('mvType').value;
+  const qty=parseInt(document.getElementById('mvQty').value||'0',10);
+  const note=document.getElementById('mvNote').value.trim();
+  if(!qty||qty<=0){ alert('กรุณาระบุจำนวนพัสดุให้ถูกต้อง'); return; }
+  if(type==='in'){
+    const name=document.getElementById('mvProdNew').value.trim();
+    const unit=document.getElementById('mvNewUnit').value.trim();
+    if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+    const img=document.getElementById('mvImgBox').dataset.data||'';
+    const mfg=document.getElementById('mvDateStart').value||'';
+    const expiry=document.getElementById('mvDateEnd').value||'';
+    const id='p'+Date.now();
+    DB.products.push({id,name,unit,initial:qty,current:qty,img,mfg,expiry});
+    DB.tx.push({id:'t'+Date.now(),pid:id,type:'in',qty,note:note||'รับสินค้าใหม่เข้าคลัง',ts:Date.now()});
+  } else {
+    const pid=document.getElementById('mvProd').value;
+    const p=DB.products.find(x=>x.id===pid);
+    if(!p){ alert('ไม่พบสินค้า'); return; }
+    if(qty>p.current){ alert('จำนวนที่เบิกมากกว่ายอดคงเหลือในระบบ'); return; }
+    p.current-=qty;
+    DB.tx.push({id:'t'+Date.now(),pid,type:'out',qty,note:note||'เบิกจ่ายสินค้า',ts:Date.now()});
+  }
+  saveData(DB); activeTab='overview'; render();
+}
+
+function renderManage(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const list=DB.products.filter(p=>p.name.toLowerCase().includes(q));
+  return `
+  <div class="manage-grid">
+    <div class="card">
+      <div class="section-title">จัดการรายการสินค้า</div>
+      <div class="section-sub">แก้ไขข้อมูล ปรับจำนวนคงเหลือ หรือนำรายการสินค้าที่ไม่ใช้งานออกจากระบบ</div>
+      <table><thead><tr><th>ชื่อสินค้า</th><th>หน่วย</th><th>ตั้งต้น</th><th>คงเหลือ</th><th>จัดการ</th></tr></thead><tbody id="manageBody">
+      ${list.map(p=>{const s=statusOf(p);return `<tr data-id="${p.id}"><td>${p.name}${expiryTag(p)}</td><td>${p.unit}</td><td>${fmt(p.initial)}</td><td style="${p.current<=5?'color:var(--red);font-weight:800':''}">${fmt(p.current)}</td>
+      <td><div class="actions-row"><button class="btn sm ghost" onclick="editProduct('${p.id}')">แก้ไข</button><button class="btn sm ghost" onclick="openAdjust('${p.id}')">ปรับสต๊อก</button><button class="btn sm red" onclick="removeProduct('${p.id}')">ลบ</button></div></td></tr>`}).join('')||`<tr><td colspan=5 class="empty">ไม่พบสินค้า</td></tr>`}
+      </tbody></table>
+    </div>
+    <div class="side-edit" id="sidePanel">
+      <h3>เพิ่มสินค้า</h3>
+      <p>สร้างรายการพัสดุหรืออุปกรณ์สำนักงานใหม่เข้าสู่คลังจัดเก็บ</p>
+      <label>ชื่อสินค้า</label><input type="text" id="npName" placeholder="เช่น เคมีภัณฑ์ปรับปรุงคุณภาพดิน (pH12)" style="margin-bottom:12px">
+      <label>หน่วยนับ</label><input type="text" id="npUnit" placeholder="เช่น กระสอบ, กล่อง, ขวด" style="margin-bottom:12px">
+      <label>ยอดตั้งต้น</label><input type="number" id="npQty" value="0" style="margin-bottom:12px">
+      <label>วันหมดอายุ</label><input type="date" id="npExpiry" style="margin-bottom:12px">
+      <label>รูป</label><div class="imgbox" id="npImgBox" onclick="document.getElementById('npFile').click()" style="margin-bottom:16px"><div class="ph">คลิกเพื่อเพิ่มรูป</div></div>
+      <input type="file" id="npFile" accept="image/*" style="display:none">
+      <button class="btn primary" style="width:100%" onclick="addProduct()">+ เพิ่มสินค้า</button>
+      <button class="btn ghost" style="width:100%;margin-top:10px" onclick="resetDemo()">สร้าง Mockup Data</button>
+    </div>
+  </div>`;
+}
+function bindManage(){
+  document.getElementById('npFile').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ document.getElementById('npImgBox').innerHTML=`<img src="${r.result}">`; document.getElementById('npImgBox').dataset.data=r.result; };
+    r.readAsDataURL(f);
+  });
+}
+function addProduct(){
+  const name=document.getElementById('npName').value.trim();
+  const unit=document.getElementById('npUnit').value.trim();
+  const qty=parseInt(document.getElementById('npQty').value||'0',10);
+  if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+  const img=document.getElementById('npImgBox').dataset.data||'';
+  const expiry=document.getElementById('npExpiry').value||'';
+  DB.products.push({id:'p'+Date.now(),name,unit,initial:qty,current:qty,img,expiry});
+  saveData(DB); render();
+}
+function removeProduct(id){
+  if(!confirm('ยืนยันการลบรายการสินค้านี้ออกจากระบบ?')) return;
+  DB.products=DB.products.filter(p=>p.id!==id);
+  saveData(DB); render();
+}
+function highlightRow(id){
+  document.querySelectorAll('#manageBody tr').forEach(tr=>tr.classList.toggle('row-editing', tr.dataset.id===id));
+}
+function editProduct(id){
+  const p=DB.products.find(x=>x.id===id); if(!p) return;
+  highlightRow(id);
+  const panel=document.getElementById('sidePanel');
+  panel.innerHTML=`
+    <h3>แก้ไขสินค้า</h3>
+    <p>กำลังแก้ไขข้อมูลรายการนี้ (ไฮไลต์สีเข้มในตาราง)</p>
+    <label>ชื่อสินค้า</label><input type="text" id="edName" value="${p.name}" style="margin-bottom:12px">
+    <label>หน่วยนับ</label><input type="text" id="edUnit" value="${p.unit}" style="margin-bottom:12px">
+    <div class="form-grid" style="margin-bottom:12px">
+      <div><label>วันที่ผลิต</label><input type="date" id="edMfg" value="${p.mfg||''}"></div>
+      <div><label>วันหมดอายุ</label><input type="date" id="edExpiry" value="${p.expiry||''}"></div>
+    </div>
+    <label>รูปสินค้า</label>
+    <div class="imgbox" id="edImgBox" onclick="document.getElementById('edFile').click()" style="margin-bottom:16px">
+      ${p.img?`<img src="${p.img}">`:'<div class="ph">คลิกเพื่อเพิ่มรูป</div>'}
+    </div>
+    <input type="file" id="edFile" accept="image/*" style="display:none">
+    <button class="btn primary" style="width:100%" onclick="saveEditProduct('${id}')">บันทึกการแก้ไข</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="render()">ยกเลิก</button>
+  `;
+  document.getElementById('edFile').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=()=>{ const box=document.getElementById('edImgBox'); box.innerHTML=`<img src="${r.result}">`; box.dataset.data=r.result; };
+    r.readAsDataURL(f);
+  });
+}
+function saveEditProduct(id){
+  const p=DB.products.find(x=>x.id===id); if(!p) return;
+  const name=document.getElementById('edName').value.trim();
+  const unit=document.getElementById('edUnit').value.trim();
+  if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+  const mfg=document.getElementById('edMfg').value||'';
+  const expiry=document.getElementById('edExpiry').value||'';
+  const newImg=document.getElementById('edImgBox').dataset.data;
+  p.name=name; p.unit=unit; p.mfg=mfg; p.expiry=expiry;
+  if(newImg) p.img=newImg;
+  saveData(DB); render();
+}
+function openAdjust(id){
+  const p=DB.products.find(x=>x.id===id); if(!p) return;
+  highlightRow(id);
+  const panel=document.getElementById('sidePanel');
+  panel.innerHTML=`
+    <h3>ปรับยอดสต๊อก</h3>
+    <p>${p.name}</p>
+    <div class="stock-box"><span>ยอดสินค้าเดิม</span><span class="old-val">${fmt(p.current)} ${p.unit}</span></div>
+    <label>เพิ่มยอดใหม่ (บวกเข้ากับยอดเดิม ใส่ค่าติดลบเพื่อลด)</label>
+    <input type="number" id="adjQty" value="0" style="margin-bottom:16px">
+    <button class="btn primary" style="width:100%" onclick="applyAdjust('${id}')">บันทึกยอดใหม่</button>
+    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="render()">ยกเลิก</button>
+  `;
+}
+function applyAdjust(id){
+  const p=DB.products.find(x=>x.id===id); if(!p) return;
+  const delta=parseInt(document.getElementById('adjQty').value||'0',10);
+  const nv=p.current+delta;
+  if(nv<0){ alert('ยอดสินค้ารวมต้องไม่ติดลบ'); return; }
+  p.current=nv;
+  DB.tx.push({id:'t'+Date.now(),pid:id,type:delta>=0?'in':'out',qty:Math.abs(delta),note:'ปรับยอดจากการตรวจนับสต๊อก',ts:Date.now()});
+  saveData(DB); render();
+}
+
+function renderHistory(){
+  const q=document.getElementById('searchInput').value.trim().toLowerCase();
+  const rows=[...DB.tx].sort((a,b)=>b.ts-a.ts).filter(t=>{const p=DB.products.find(x=>x.id===t.pid); return p&&p.name.toLowerCase().includes(q);});
+  return `
+  <div class="card">
+    <div class="section-title">ประวัติรายการ</div>
+    <div class="section-sub">แสดงความเคลื่อนไหวทั้งหมดของสินค้า ทั้งรายการรับเข้าและเบิกจ่าย</div>
+    <table><thead><tr><th>วันที่</th><th>ชื่อสินค้า</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead><tbody>
+    ${rows.map(t=>{const p=DB.products.find(x=>x.id===t.pid); if(!p)return'';return `
+      <tr><td>${dateStr(t.ts)}</td><td>${p.name}</td><td><span class="pill ${t.type==='in'?'ok':'out'}">${t.type==='in'?'รับเข้า':'เบิกจ่าย'}</span></td><td>${t.type==='in'?'+':'-'}${fmt(t.qty)} ${p.unit}</td><td>${t.note||'-'}</td></tr>`}).join('')||`<tr><td colspan=5 class="empty">ไม่พบประวัติรายการ</td></tr>`}
+    </tbody></table>
+  </div>`;
+}
+
+let dashMode='month', dashFilter='out';
+function setDashFilter(f){ dashFilter=f; renderDash2(); }
+function renderDash(){
+  return `
+  <div class="dash-tabs">
+    <button data-m="month" class="${dashMode==='month'?'on':''}">รายเดือน</button>
+    <button data-m="year" class="${dashMode==='year'?'on':''}">รายปี</button>
+    <button data-m="product" class="${dashMode==='product'?'on':''}">รายสินค้า</button>
+  </div>
+  <div id="dashBody"></div>`;
+}
+function bindDash(){
+  document.querySelectorAll('.dash-tabs button').forEach(b=>b.addEventListener('click',()=>{dashMode=b.dataset.m; renderDash2(); }));
+  renderDash2();
+}
+function renderDash2(){
+  document.querySelectorAll('.dash-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===dashMode));
+  const body=document.getElementById('dashBody');
+  const totalIn=DB.tx.filter(t=>t.type==='in').reduce((s,t)=>s+t.qty,0);
+  const totalOut=DB.tx.filter(t=>t.type==='out').reduce((s,t)=>s+t.qty,0);
+  const totalInit=DB.products.reduce((s,p)=>s+p.initial,0)||1;
+  const totalCur=DB.products.reduce((s,p)=>s+p.current,0);
+  const soldPct=Math.min(100,Math.round((totalOut/(totalInit))*100));
+  const growth=totalIn-totalOut;
+  const perProd=DB.products.map(p=>{
+    const inQ=DB.tx.filter(t=>t.pid===p.id&&t.type==='in').reduce((s,t)=>s+t.qty,0);
+    const outQ=DB.tx.filter(t=>t.pid===p.id&&t.type==='out').reduce((s,t)=>s+t.qty,0);
+    const pct=p.initial>0?Math.round((outQ/p.initial)*100):0;
+    return {p,inQ,outQ,net:inQ-outQ,pct};
+  });
+  const metricCfg={
+    in:{title:'สินค้าที่รับเข้ามากที่สุด',sub:'อ้างอิงจากยอดรับเข้าสะสมในระบบ',col:'รับเข้าสะสม',sort:(a,b)=>b.inQ-a.inQ,val:x=>`${fmt(x.inQ)} ${x.p.unit}`},
+    out:{title:'สินค้าที่เบิกใช้มากที่สุด',sub:'อ้างอิงจากยอดเบิกจ่ายสะสมในระบบ',col:'เบิกจ่ายสะสม',sort:(a,b)=>b.outQ-a.outQ,val:x=>`${fmt(x.outQ)} ${x.p.unit}`},
+    pct:{title:'สินค้าที่เบิกใช้เป็น % สูงสุด',sub:'เทียบกับยอดตั้งต้นของสินค้าแต่ละตัว',col:'% เบิกใช้',sort:(a,b)=>b.pct-a.pct,val:x=>`${x.pct}%`},
+    net:{title:'สินค้าที่ยอดสุทธิเปลี่ยนแปลงมากที่สุด',sub:'รับเข้า − เบิกจ่าย ของสินค้าแต่ละตัว',col:'ยอดสุทธิ',sort:(a,b)=>Math.abs(b.net)-Math.abs(a.net),val:x=>`${x.net>=0?'+':''}${fmt(x.net)}`},
+  };
+  const mc=metricCfg[dashFilter];
+  body.innerHTML=`
+    <div class="kpi-row">
+      <div class="stat ${dashFilter==='in'?'on':''}" onclick="setDashFilter('in')"><div class="lbl">รายการรับเข้า</div><div class="num">${fmt(totalIn)}</div><div class="sub">หน่วยสะสมทั้งหมด</div></div>
+      <div class="stat ${dashFilter==='out'?'on':''}" onclick="setDashFilter('out')"><div class="lbl">รายการเบิกจ่าย</div><div class="num">${fmt(totalOut)}</div><div class="sub">หน่วยสะสมทั้งหมด</div></div>
+      <div class="stat ${dashFilter==='pct'?'on':''}" onclick="setDashFilter('pct')"><div class="lbl">สินค้าเบิกใช้ %</div><div class="num">${soldPct}%</div><div class="sub">เทียบกับยอดตั้งต้นรวม</div></div>
+      <div class="stat ${dashFilter==='net'?'on':''}" onclick="setDashFilter('net')"><div class="lbl">ยอดสุทธิเปลี่ยนแปลง</div><div class="num" style="color:${growth>=0?'var(--green)':'var(--red)'}">${growth>=0?'+':''}${fmt(growth)}</div><div class="sub">รับเข้า−เบิกจ่าย</div></div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="section-title">สินค้าใกล้หมดอายุ</div>
+      <div class="section-sub">เรียงลำดับจากวันหมดอายุใกล้ที่สุดไปไกลที่สุด</div>
+      <table><thead><tr><th>ชื่อสินค้า</th><th>คงเหลือ</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>
+      ${DB.products.filter(p=>p.expiry).sort((a,b)=>new Date(a.expiry)-new Date(b.expiry)).map(p=>{const m=monthsUntil(p.expiry);const warn=m<=3;return `<tr><td>${p.name}</td><td>${fmt(p.current)} ${p.unit}</td><td>${p.expiry}</td><td>${warn?`<span class="pill ${m<0?'out':'low'}">${m<0?`หมดอายุแล้ว ${Math.abs(m)} ด.`:`เหลือ ${m} เดือน`}</span>`:`<span class="pill ok">ยังไม่ใกล้หมดอายุ</span>`}</td></tr>`}).join('')||`<tr><td colspan=4 class="empty">ไม่มีข้อมูลวันหมดอายุ</td></tr>`}
+      </tbody></table>
+    </div>
+    <div class="card">
+      <div class="section-title">${mc.title}</div>
+      <div class="section-sub">${mc.sub} · <a href="#" onclick="setDashFilter('out');return false;" style="color:var(--green-dk);font-weight:700">${dashFilter!=='out'?'กลับเป็นค่าเริ่มต้น':''}</a></div>
+      <table><thead><tr><th>ชื่อสินค้า</th><th>${mc.col}</th><th>คงเหลือ</th></tr></thead><tbody>
+      ${[...perProd].sort(mc.sort).slice(0,6).map(x=>`<tr><td>${x.p.name}</td><td>${mc.val(x)}</td><td>${fmt(x.p.current)}</td></tr>`).join('')}
+      </tbody></table>
+    </div>`;
+}
+
+render();
+</script>
+</body>
+</html>
