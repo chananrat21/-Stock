@@ -1,0 +1,17 @@
+product_id,name,category,unit,qty,min_stock,price_per_unit,supplier,image_url,mfg_date,expiry_date,status,updated_at
+P001,ปุ๋ยอินทรีย์ 16-16-16,ปุ๋ย,กระสอบ,58,10,620,บริษัท A,,2026-06-01,2027-06-01,OK,2026-09-28T12:00:00.000Z
+P002,เคมีภัณฑ์ปรับปรุงคุณภาพดิน pH12,เคมีภัณฑ์,กระสอบ,24,8,450,บริษัท B,,2026-05-10,2026-11-15,OK,2026-09-28T12:00:00.000Z
+P003,ปุ๋ยกระถิน SPRING,ปุ๋ย,กระสอบ,0,5,280,บริษัท C,,2026-04-05,2026-10-05,OUT,2026-09-28T12:00:00.000Z
+
+movement_id,product_id,movement_type,qty,reason,note,created_by,created_at
+M001,P001,IN,12,รับสินค้า,รับจากซัพพลายเออร์ A,admin,2026-09-28T09:00:00.000Z
+M002,P001,OUT,6,เบิกจ่าย,เบิกให้แผนกสวน,admin,2026-09-28T10:00:00.000Z
+M003,P003,OUT,20,เบิกจ่าย,เบิกให้แผนกเกษตร,admin,2026-09-28T11:00:00.000Z
+
+supplier_id,name,phone,email,updated_at
+S001,บริษัท A,012345678,storeA@example.com,2026-09-28T12:00:00.000Z
+S002,บริษัท B,098765432,storeB@example.com,2026-09-28T12:00:00.000Z
+
+key,value,updated_at
+company_name,Ledger Stock,2026-09-28T12:00:00.000Z
+currency,THB,2026-09-28T12:00:00.000Z

@@ -152,6 +152,41 @@ select.prodpick{background:var(--bg2)}
 <script>
 /* ---------- Data layer ---------- */
 const LS_KEY='ledger_stock_v1';
+const GOOGLE_API_URL = (window.STOCK_API_URL || '').trim();
+const USE_GOOGLE_SHEET = !!GOOGLE_API_URL && GOOGLE_API_URL !== 'https://script.google.com/macros/s/AKfycbwEKpIQF1AeWHRUXUCxF454GJpQ5W_uqoSRK87hoXS-FbXnH9fprANKg_WYHJiJ_KJ9/exec';
+
+function normalizeGoogleProduct(row){
+  const qty = Number(row.qty ?? row.current ?? 0);
+  const initial = Number(row.initial ?? qty);
+  const price = Number(row.price_per_unit ?? row.price ?? 0);
+  const img = row.image_url || row.img || mockImg((row.name || 'SKU').slice(0, 3).toUpperCase(), '#1f6b3f');
+  return {
+    id: String(row.product_id || row.id || 'p_' + Date.now() + Math.random()),
+    name: row.name || 'Unnamed product',
+    unit: row.unit || 'ชิ้น',
+    initial,
+    current: qty,
+    price,
+    img,
+    mfg: row.mfg_date || '',
+    expiry: row.expiry_date || '',
+    supplier: row.supplier || '',
+    status: row.status || 'OK',
+    category: row.category || ''
+  };
+}
+
+function normalizeGoogleMovement(row){
+  return {
+    id: String(row.movement_id || row.id || 'm_' + Date.now() + Math.random()),
+    pid: String(row.product_id || row.pid || ''),
+    type: String(row.movement_type || row.type || 'out').toLowerCase() === 'in' ? 'in' : 'out',
+    qty: Number(row.qty || 0),
+    note: row.note || row.reason || 'Moved from Google Sheet',
+    ts: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+  };
+}
+
 function showDoneOverlay(msg){
   const ov=document.createElement('div');
   ov.className='done-overlay';
@@ -187,12 +222,44 @@ function seedData(){
   ];
   return {products,tx};
 }
+async function fetchGoogleData() {
+  if (!USE_GOOGLE_SHEET) return null;
+  try {
+    const productsRes = await fetch(`${GOOGLE_API_URL}?type=products`);
+    const movementsRes = await fetch(`${GOOGLE_API_URL}?type=stock_movements`);
+    if (!productsRes.ok || !movementsRes.ok) return null;
+
+    const productsJson = await productsRes.json();
+    const movementsJson = await movementsRes.json();
+
+    if (!Array.isArray(productsJson) || !Array.isArray(movementsJson)) return null;
+
+    return {
+      products: productsJson.map(normalizeGoogleProduct),
+      tx: movementsJson.map(normalizeGoogleMovement)
+    };
+  } catch (error) {
+    console.warn('Google Sheet fetch failed, falling back to local data:', error);
+    return null;
+  }
+}
+
 function loadData(){
   try{const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw);}catch(e){}
   const d=seedData(); saveData(d); return d;
 }
 function saveData(d){ try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){} }
 let DB=loadData();
+
+async function hydrateFromGoogleIfAvailable(){
+  const remote = await fetchGoogleData();
+  if (remote) {
+    DB = remote;
+    saveData(DB);
+    render();
+  }
+}
+
 function resetDemo(){ DB=seedData(); saveData(DB); render(); }
 
 function fmt(n){ return new Intl.NumberFormat('th-TH').format(n); }
@@ -379,11 +446,72 @@ function bindMove(){
   });
   refresh();
 }
-function saveMove(){
+async function saveMove(){
   const type=document.getElementById('mvType').value;
   const qty=parseInt(document.getElementById('mvQty').value||'0',10);
   const note=document.getElementById('mvNote').value.trim();
   if(!qty||qty<=0){ alert('กรุณาระบุจำนวนพัสดุให้ถูกต้อง'); return; }
+
+  if (USE_GOOGLE_SHEET) {
+    if (type === 'in') {
+      const name=document.getElementById('mvProdNew').value.trim();
+      const unit=document.getElementById('mvNewUnit').value.trim();
+      if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+      const payload = {
+        type: 'addProduct',
+        name,
+        unit,
+        qty,
+        min_stock: 0,
+        price_per_unit: Number(document.getElementById('mvPrice').value || 0),
+        category: 'General',
+        supplier: 'Google Sheet',
+        image_url: document.getElementById('mvImgBox').dataset.data || '',
+        mfg_date: document.getElementById('mvDateStart').value || '',
+        expiry_date: document.getElementById('mvDateEnd').value || ''
+      };
+      const res = await fetch(`${GOOGLE_API_URL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (!result || !result.success) {
+        alert('เพิ่มข้อมูลไปยัง Google Sheet ไม่สำเร็จ');
+        return;
+      }
+      await hydrateFromGoogleIfAvailable();
+      showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
+      return;
+    }
+
+    const pid=document.getElementById('mvProd').value;
+    const p=DB.products.find(x=>x.id===pid);
+    if(!p){ alert('ไม่พบสินค้า'); return; }
+    if(qty>p.current){ alert('จำนวนที่เบิกมากกว่ายอดคงเหลือในระบบ'); return; }
+    const res = await fetch(`${GOOGLE_API_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'addMovement',
+        product_id: pid,
+        movement_type: 'OUT',
+        qty,
+        reason: 'เบิกสินค้า',
+        note: note || 'เบิกจ่ายสินค้า',
+        created_by: 'web_user'
+      })
+    });
+    const result = await res.json();
+    if (!result || !result.success) {
+      alert('บันทึกรายการเบิกสินค้าไม่สำเร็จ');
+      return;
+    }
+    await hydrateFromGoogleIfAvailable();
+    showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
+    return;
+  }
+
   if(type==='in'){
     const name=document.getElementById('mvProdNew').value.trim();
     const unit=document.getElementById('mvNewUnit').value.trim();
@@ -444,11 +572,40 @@ function bindManage(){
     r.readAsDataURL(f);
   });
 }
-function addProduct(){
+async function addProduct(){
   const name=document.getElementById('npName').value.trim();
   const unit=document.getElementById('npUnit').value.trim();
   const qty=parseInt(document.getElementById('npQty').value||'0',10);
   if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+
+  if (USE_GOOGLE_SHEET) {
+    const payload = {
+      type: 'addProduct',
+      name,
+      unit,
+      qty,
+      min_stock: 0,
+      price_per_unit: Number(document.getElementById('npPrice').value || 0),
+      category: 'General',
+      supplier: 'Google Sheet',
+      image_url: document.getElementById('npImgBox').dataset.data || '',
+      expiry_date: document.getElementById('npExpiry').value || ''
+    };
+    const res = await fetch(`${GOOGLE_API_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!result || !result.success) {
+      alert('เพิ่มสินค้าไปยัง Google Sheet ไม่สำเร็จ');
+      return;
+    }
+    await hydrateFromGoogleIfAvailable();
+    showDoneOverlay('เพิ่มสินค้าเรียบร้อยแล้ว');
+    return;
+  }
+
   const img=document.getElementById('npImgBox').dataset.data||'';
   const expiry=document.getElementById('npExpiry').value||'';
   const price=parseFloat(document.getElementById('npPrice').value||'0');
@@ -493,11 +650,42 @@ function editProduct(id){
     r.readAsDataURL(f);
   });
 }
-function saveEditProduct(id){
+async function saveEditProduct(id){
   const p=DB.products.find(x=>x.id===id); if(!p) return;
   const name=document.getElementById('edName').value.trim();
   const unit=document.getElementById('edUnit').value.trim();
   if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+
+  if (USE_GOOGLE_SHEET) {
+    const payload = {
+      type: 'updateProduct',
+      product_id: id,
+      name,
+      unit,
+      qty: Number(p.current || 0),
+      min_stock: 0,
+      price_per_unit: Number(document.getElementById('edPrice').value || 0),
+      category: 'General',
+      supplier: 'Google Sheet',
+      image_url: document.getElementById('edImgBox').dataset.data || p.img || '',
+      mfg_date: document.getElementById('edMfg').value || '',
+      expiry_date: document.getElementById('edExpiry').value || ''
+    };
+    const res = await fetch(`${GOOGLE_API_URL}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const result = await res.json();
+    if (!result || !result.success) {
+      alert('แก้ไขสินค้าใน Google Sheet ไม่สำเร็จ');
+      return;
+    }
+    await hydrateFromGoogleIfAvailable();
+    showDoneOverlay('บันทึกการแก้ไขเรียบร้อยแล้ว');
+    return;
+  }
+
   const mfg=document.getElementById('edMfg').value||'';
   const expiry=document.getElementById('edExpiry').value||'';
   const price=parseFloat(document.getElementById('edPrice').value||'0');
