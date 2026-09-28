@@ -3,856 +3,2822 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ledger • Stock Control</title>
+<meta name="description" content="ระบบจัดการสต๊อกและคลังสินค้า Ledger Stock Control เชื่อมต่อ Google Sheet รองรับเบิก-จ่าย ตรวจนับ และสรุปรายงาน">
+<title>Ledger • ระบบจัดการคลังสินค้าและสต๊อกพัสดุ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="google-sheet-client.js"></script>
 <style>
-:root{
-  --bg:#eaf5ec; --bg2:#f4faf5; --card:#ffffff; --line:#d7e8da;
-  --ink:#16241b; --sub:#5c7566; --green:#1f6b3f; --green-dk:#123f26; --green-lt:#e3f3e6;
-  --amber:#8a6d1f; --amber-bg:#fdf3d9; --red:#b23a3a; --red-bg:#fbe4e4;
-  --radius:14px;
-  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+:root {
+  --font-main: 'Noto Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --bg: #f4f8f5;
+  --bg-card: #ffffff;
+  --bg-subtle: #f9fbf9;
+  --bg-input: #ffffff;
+  --border: #dbe7df;
+  --border-focus: #10b981;
+  --text-main: #132418;
+  --text-sub: #526b5c;
+  --text-muted: #859c8e;
+  
+  --primary: #047857;
+  --primary-hover: #065f46;
+  --primary-light: #ecfdf5;
+  --primary-glow: rgba(4, 120, 87, 0.15);
+
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  
+  --amber: #b45309;
+  --amber-bg: #fffbeb;
+  --amber-border: #fde68a;
+  
+  --red: #b91c1c;
+  --red-bg: #fef2f2;
+  --red-border: #fecaca;
+  
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 4px 16px -2px rgba(18, 56, 32, 0.07);
+  --shadow-lg: 0 12px 30px -4px rgba(18, 56, 32, 0.12);
+  --trans: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-*{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans Thai','Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100%}
-.wrap{max-width:1180px;margin:0 auto;padding:28px 22px 60px}
-.top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:18px}
-.brand-eyebrow{font-size:11px;letter-spacing:.08em;color:var(--red);font-weight:700;margin-bottom:4px}
-.brand h1{font-size:28px;margin:0 0 6px;font-weight:800;color:var(--green-dk)}
-.brand p{margin:0;color:var(--sub);font-size:13.5px;max-width:520px}
-.user{display:flex;align-items:center;gap:10px}
-.user img{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#cfe3d3}
-.user .name{font-weight:700;font-size:13.5px}
-.user .tel{font-size:12px;color:var(--sub)}
-.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0 18px;align-items:center}
-.tab-btn{background:var(--card);border:1px solid var(--line);color:var(--green-dk);padding:9px 16px;border-radius:10px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}
-.tab-btn.active{background:var(--green-dk);color:#fff;border-color:var(--green-dk)}
-.searchbar{margin-left:auto;display:flex;gap:8px;align-items:center}
-.searchbar input{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:9px 14px;font-size:13px;width:220px;font-family:inherit}
-.iconbtn{border:1px solid var(--line);background:var(--card);border-radius:10px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--green-dk)}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;cursor:pointer;transition:border-color .15s}
-.stat:hover{border-color:var(--green)}
-.stat.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
-.stat .lbl{font-size:12.5px;color:var(--sub);margin-bottom:8px}
-.stat .num{font-size:26px;font-weight:800;color:var(--green-dk)}
-.stat .sub{font-size:11.5px;color:var(--sub);margin-top:4px}
-.two-col{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;align-items:start}
-.section-title{font-size:16px;font-weight:800;margin:0 0 3px;color:var(--green-dk)}
-.section-sub{font-size:12.5px;color:var(--sub);margin:0 0 14px}
-table{width:100%;border-collapse:collapse;font-size:13.5px}
-th{text-align:left;color:var(--sub);font-weight:600;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
-td{padding:10px;border-bottom:1px solid var(--line)}
-tr:last-child td{border-bottom:none}
-.pill{padding:4px 10px;border-radius:20px;font-size:11.5px;font-weight:700}
-.pill.ok{background:var(--green-lt);color:var(--green-dk)}
-.pill.low{background:var(--amber-bg);color:var(--amber)}
-.pill.out{background:var(--red-bg);color:var(--red)}
-.recent{display:flex;flex-direction:column;gap:14px;max-height:430px;overflow-y:auto}
-.recent-item{display:flex;gap:10px;font-size:13px}
-.dot{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
-.dot.in{background:var(--green-lt);color:var(--green-dk)}
-.dot.out{background:var(--red-bg);color:var(--red)}
-.recent-item .name{font-weight:700}
-.recent-item .meta{color:var(--sub);font-size:11.5px;margin-top:2px}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-label{display:block;font-size:12.5px;font-weight:700;color:var(--green-dk);margin-bottom:6px}
-select,input[type=text],input[type=number],textarea,input[type=date]{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px;font-family:inherit;background:var(--bg2)}
-textarea{resize:vertical;min-height:70px}
-.stock-box{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;font-size:13px;color:var(--sub)}
-.stock-box b{font-size:20px;color:var(--green-dk)}
-.imgbox{border:1.5px dashed var(--line);border-radius:10px;height:120px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg2);cursor:pointer;position:relative}
-.imgbox img{width:100%;height:100%;object-fit:contain}
-.imgbox .ph{font-size:12px;color:var(--sub);text-align:center;padding:8px}
-.btn{border:none;border-radius:10px;padding:10px 18px;font-weight:700;font-size:13.5px;cursor:pointer;font-family:inherit}
-.btn.primary{background:var(--green-dk);color:#fff}
-.btn.ghost{background:var(--card);border:1px solid var(--line);color:var(--green-dk)}
-.btn.sm{padding:6px 12px;font-size:12px;border-radius:8px}
-.btn.red{background:var(--red);color:#fff}
-.btn.green{background:var(--green);color:#fff}
-.actions-row{display:flex;gap:10px}
-.tip-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;font-size:12.5px;color:var(--sub);line-height:1.7}
-.tip-card h4{margin:0 0 8px;font-size:13.5px;color:var(--green-dk)}
-.tip-card .note{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
-.manage-grid{display:grid;grid-template-columns:2fr 1fr;gap:16px}
-.side-edit{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
-.side-edit h3{margin:0 0 3px;font-size:15px;color:var(--green-dk)}
-.side-edit p{margin:0 0 14px;font-size:12px;color:var(--sub)}
-.old-val{color:var(--red);font-weight:800;font-size:15px}
-.row-editing td{background:var(--green-dk)!important;color:#fff}
-.row-editing .pill{color:var(--ink)}
-footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--sub)}
-footer .flinks{display:flex;gap:20px}
-.empty{padding:40px 10px;text-align:center;color:var(--sub);font-size:13px}
-.done-overlay{position:fixed;inset:0;background:rgba(18,63,38,.55);display:flex;align-items:center;justify-content:center;z-index:9999;animation:doneFadeIn .2s ease}
-.done-overlay.fade-out{opacity:0;transition:opacity .3s ease}
-.done-card{background:var(--card);border-radius:16px;padding:34px 44px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);max-width:280px}
-.done-check{width:56px;height:56px;border-radius:50%;background:var(--green-lt);color:var(--green-dk);font-size:28px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
-.done-msg{font-weight:700;color:var(--green-dk);font-size:14.5px}
-@keyframes doneFadeIn{from{opacity:0}to{opacity:1}}
-.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-select.prodpick{background:var(--bg2)}
-@media (max-width:880px){
-  .two-col,.manage-grid,.form-grid{grid-template-columns:1fr}
-  .grid4,.kpi-row{grid-template-columns:1fr 1fr}
-  .searchbar{margin-left:0;width:100%}
-  .searchbar input{flex:1}
+
+[data-theme="dark"] {
+  --bg: #0b1410;
+  --bg-card: #121f18;
+  --bg-subtle: #172720;
+  --bg-input: #15241d;
+  --border: #233b2e;
+  --border-focus: #10b981;
+  --text-main: #edf6f0;
+  --text-sub: #94af9e;
+  --text-muted: #5e7a69;
+  
+  --primary: #10b981;
+  --primary-hover: #34d399;
+  --primary-light: #163628;
+  --primary-glow: rgba(16, 185, 129, 0.25);
+  
+  --amber: #f59e0b;
+  --amber-bg: #2d2410;
+  --amber-border: #523e16;
+  
+  --red: #f87171;
+  --red-bg: #301414;
+  --red-border: #522222;
+  
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow: 0 6px 20px rgba(0,0,0,0.35);
+  --shadow-lg: 0 16px 36px rgba(0,0,0,0.5);
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#0e1712;--bg2:#132019;--card:#152219;--line:#24382b;--ink:#e7f2ea;--sub:#8fa896;
-    --green-lt:#173926;--amber-bg:#2e2610;--red-bg:#301616;
-  }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-main);
+  background: var(--bg);
+  color: var(--text-main);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
-:root[data-theme="dark"]{
-  --bg:#0e1712;--bg2:#132019;--card:#152219;--line:#24382b;--ink:#e7f2ea;--sub:#8fa896;
-  --green-lt:#173926;--amber-bg:#2e2610;--red-bg:#301616;
+
+.wrap {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* Header */
+header.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.brand-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, var(--primary) 0%, #064e3b 100%);
+  color: #fff;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: 0 4px 12px var(--primary-glow);
+  flex-shrink: 0;
+}
+
+.brand-text h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-text .badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.brand-text p {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.top-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Sync indicator */
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 30px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: var(--trans);
+  color: var(--text-main);
+}
+.sync-badge:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.sync-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+.sync-dot.offline {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+.sync-dot.syncing {
+  background: #3b82f6;
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 30px;
+  font-size: 13px;
+}
+.profile-pill img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--border);
+}
+.profile-pill .info {
+  display: flex;
+  flex-direction: column;
+}
+.profile-pill .name {
+  font-weight: 700;
+  line-height: 1.2;
+}
+.profile-pill .wh {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.theme-toggle-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  transition: var(--trans);
+}
+.theme-toggle-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text-sub);
+}
+
+/* Navigation Tabs */
+.nav-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  padding: 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-sub);
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--trans);
+}
+.tab-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-subtle);
+}
+.tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.search-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.search-input-wrap {
+  position: relative;
+}
+.search-input-wrap input {
+  width: 250px;
+  padding: 9px 14px 9px 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: var(--trans);
+}
+.search-input-wrap input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+  width: 280px;
+}
+.search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--trans);
+}
+.icon-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--primary);
+}
+
+/* Cards & Layout */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+}
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.section-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-sub {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: var(--trans);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0; width: 4px;
+  background: transparent;
+  transition: var(--trans);
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--border-focus);
+}
+.kpi-card.active {
+  border-color: var(--primary);
+  background: var(--bg-subtle);
+}
+.kpi-card.active::before {
+  background: var(--primary);
+}
+.kpi-label {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.kpi-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+}
+.kpi-desc {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Two Columns */
+.two-col {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+.three-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+/* Tables */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+}
+table.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  text-align: left;
+}
+table.stock-table th {
+  padding: 10px 14px;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.stock-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+table.stock-table tbody tr {
+  transition: var(--trans);
+}
+table.stock-table tbody tr:hover {
+  background: var(--bg-subtle);
+}
+table.stock-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Product Row details */
+.prod-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.prod-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.prod-info-name {
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.3;
+}
+.prod-info-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* Status Pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill.ok {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid rgba(4, 120, 87, 0.2);
+}
+.pill.low {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid var(--amber-border);
+}
+.pill.out {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--red-border);
+}
+.pill.accent {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* Category Filter Tags */
+.filter-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.filter-pill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: var(--trans);
+}
+.filter-pill:hover, .filter-pill.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--trans);
+  text-decoration: none;
+}
+.btn.primary {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+.btn.primary:hover {
+  background: var(--primary-hover);
+}
+.btn.ghost {
+  background: var(--bg-card);
+  border-color: var(--border);
+  color: var(--text-main);
+}
+.btn.ghost:hover {
+  background: var(--bg-subtle);
+  border-color: var(--text-sub);
+}
+.btn.red {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red-border);
+}
+.btn.red:hover {
+  background: var(--red);
+  color: #fff;
+}
+.btn.sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.btn-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Forms */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.form-group input, 
+.form-group select, 
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+  transition: var(--trans);
+}
+.form-group input:focus, 
+.form-group select:focus, 
+.form-group textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+.form-group textarea {
+  min-height: 75px;
+  resize: vertical;
+}
+
+/* Movement Type Switcher */
+.move-type-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+  background: var(--bg-subtle);
+  padding: 6px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.move-tab-btn {
+  padding: 10px 14px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--text-sub);
+  transition: var(--trans);
+  font-family: inherit;
+}
+.move-tab-btn.active.out {
+  background: var(--red);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(185, 28, 28, 0.25);
+}
+.move-tab-btn.active.in {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+.move-tab-btn.active.new {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+/* Calculation Callout Box */
+.calc-callout {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.calc-item {
+  display: flex;
+  flex-direction: column;
+}
+.calc-item .label {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+.calc-item .val {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.calc-item .val.highlight {
+  color: var(--primary);
+}
+
+/* Image Upload Box */
+.img-upload-box {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--bg-subtle);
+  position: relative;
+  overflow: hidden;
+  transition: var(--trans);
+  color: var(--text-sub);
+}
+.img-upload-box:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+.img-upload-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.img-upload-box .upload-hint {
+  font-size: 12px;
+  text-align: center;
+}
+
+/* Recent list */
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.recent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.recent-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.move-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.move-icon-badge.in {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+.move-icon-badge.out {
+  background: var(--red-bg);
+  color: var(--red);
+}
+.move-icon-badge.adjust {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* Modal Dialog */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: modalFadeIn 0.15s ease;
+}
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.modal-close:hover {
+  color: var(--text-main);
+}
+
+/* Toast Notification */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  animation: toastSlideUp 0.25s ease;
+  min-width: 280px;
+}
+@keyframes toastSlideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.toast.success { border-left: 4px solid var(--primary); }
+.toast.error { border-left: 4px solid var(--red); }
+.toast.info { border-left: 4px solid var(--accent); }
+
+/* SVG Charts */
+.chart-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+/* Empty states */
+.empty-state {
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.empty-icon {
+  font-size: 36px;
+  margin-bottom: 8px;
+  opacity: 0.6;
+}
+
+/* Footer */
+footer.bottom-bar {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+.footer-links {
+  display: flex;
+  gap: 16px;
+}
+.footer-links a {
+  color: var(--text-sub);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--trans);
+}
+.footer-links a:hover {
+  color: var(--primary);
+}
+
+@media print {
+  body { background: #fff !important; color: #000 !important; }
+  .top-controls, .nav-bar, .filter-pills, .btn-group, .actions-row, footer { display: none !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; }
+}
+
+@media (max-width: 860px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .two-col, .form-grid { grid-template-columns: 1fr; }
+  .brand-section { width: 100%; }
+  .search-input-wrap input { width: 100%; }
+  .search-group { width: 100%; }
+  .search-input-wrap { flex: 1; }
 }
 </style>
 </head>
 <body>
+
 <div class="wrap">
-  <div class="top">
-    <div class="brand">
-      <div class="brand-eyebrow">LEDGER • STOCK CONTROL</div>
-      <h1>คลังสินค้า</h1>
-      <p>ระบบสมุดบัญชี สำหรับรับเข้า เบิกจ่าย ตรวจสอบคงเหลือ และติดตามความเคลื่อนไหวของวัสดุอุปกรณ์ภายในสำนักงาน</p>
+  <!-- Top Bar -->
+  <header class="top-bar">
+    <div class="brand-section">
+      <div class="brand-icon">📦</div>
+      <div class="brand-text">
+        <h1>
+          <span id="displayCompanyName">LEDGER STOCK</span>
+          <span class="badge">v2.1</span>
+        </h1>
+        <p id="displayCompanyDesc">ระบบจัดการสต๊อกและคลังสินค้า พร้อมระบบบันทึกรับ-จ่าย และเชื่อมต่อ Google Sheets</p>
+      </div>
     </div>
-    <div class="user">
-      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='20' fill='%23123f26'/%3E%3Ctext x='20' y='26' font-family='Inter,sans-serif' font-size='15' font-weight='700' fill='%23fff' text-anchor='middle'%3ETK%3C/text%3E%3C/svg%3E" alt="">
-      <div><div class="name">Mr. Thavrith Khmer</div><div class="tel">(+855) 69 927 112</div></div>
+    
+    <div class="top-controls">
+      <!-- Sync Status Badge -->
+      <div id="syncBadge" class="sync-badge" onclick="switchTab('settings')" title="คลิกเพื่อจัดการการเชื่อมต่อ Google Sheet">
+        <span id="syncDot" class="sync-dot offline"></span>
+        <span id="syncText">โหมดออฟไลน์</span>
+      </div>
+
+      <!-- Quick Sync Button -->
+      <button class="icon-btn" onclick="manualSync()" title="ซิงค์ข้อมูลกับ Google Sheet ทันที">🔄</button>
+
+      <!-- User Profile Badge -->
+      <div class="profile-pill">
+        <img id="displayUserAvatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='20' fill='%23047857'/%3E%3Ctext x='20' y='25' font-family='Inter,sans-serif' font-size='14' font-weight='700' fill='%23fff' text-anchor='middle'%3EMG%3C/text%3E%3C/svg%3E" alt="Avatar">
+        <div class="info">
+          <span id="displayUserName" class="name">ผู้จัดการคลัง</span>
+          <span id="displayWarehouseName" class="wh">คลังสินค้าหลัก</span>
+        </div>
+      </div>
+
+      <!-- Dark / Light Theme Toggle -->
+      <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="เปลี่ยนธีม มืด/สว่าง">🌙</button>
+    </div>
+  </header>
+
+  <!-- Navigation Bar -->
+  <div class="nav-bar">
+    <div class="nav-tabs">
+      <button class="tab-btn active" data-tab="overview">📊 ภาพรวมคลัง</button>
+      <button class="tab-btn" data-tab="move">⇄ เบิก / รับสินค้า</button>
+      <button class="tab-btn" data-tab="manage">📦 จัดการสต๊อก</button>
+      <button class="tab-btn" data-tab="history">📜 ประวัติรายการ</button>
+      <button class="tab-btn" data-tab="dash">📈 สถิติ & Dashboard</button>
+      <button class="tab-btn" data-tab="settings">⚙ ตั้งค่า</button>
+    </div>
+
+    <div class="search-group">
+      <div class="search-input-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="globalSearchInput" placeholder="ค้นหาชื่อสินค้า, SKU, หมวดหมู่..." oninput="handleSearch()">
+      </div>
+      <button class="icon-btn" onclick="printStockReport()" title="พิมพ์รายงานสินค้า">🖨</button>
+      <button class="icon-btn" onclick="resetDemoDataConfirm()" title="รีเซ็ตข้อมูลตัวอย่าง">⟳</button>
     </div>
   </div>
 
-  <div class="tabs">
-    <button class="tab-btn" data-tab="overview">ภาพรวมคลัง</button>
-    <button class="tab-btn" data-tab="move">เบิก / รับสินค้า</button>
-    <button class="tab-btn" data-tab="manage">จัดการสต๊อก</button>
-    <button class="tab-btn" data-tab="history">ประวัติรายการ</button>
-    <button class="tab-btn" data-tab="dash">Dashboard</button>
-    <div class="searchbar">
-      <input id="searchInput" placeholder="ค้นหาชื่อสินค้า...">
-      <div class="iconbtn" onclick="resetDemo()" title="รีเซ็ตข้อมูลตัวอย่าง">⟳</div>
-    </div>
-  </div>
+  <!-- Dynamic Tab View Container -->
+  <main id="mainView"></main>
 
-  <div id="view"></div>
-
-  <footer>
-    <div class="flinks">
-      <span>🏠 หน้าหลัก</span><span>📋 สต๊อกพัสดุ</span><span>⇅ รายการเบิกจ่าย</span><span>⚙ ตั้งค่า</span>
+  <!-- Footer -->
+  <footer class="bottom-bar">
+    <div class="footer-links">
+      <a onclick="switchTab('overview')">🏠 หน้าแรก</a>
+      <a onclick="switchTab('move')">⇄ บันทึกเบิก/รับ</a>
+      <a onclick="switchTab('manage')">📦 คลังสินค้า</a>
+      <a onclick="switchTab('settings')">⚙ เชื่อมต่อ Google Sheet</a>
+      <a onclick="exportDataCSV()">📥 ดาวน์โหลด CSV</a>
     </div>
-    <div>© 2026 Ledger Inc. ระบบบวงคุมคลังสินค้าสำนักงาน</div>
+    <div>© 2026 Ledger Stock Management System • ปลอดภัย ข้อมูลจัดเก็บทั้งในเครื่องและ Google Sheets</div>
   </footer>
 </div>
 
+<!-- Modal Container -->
+<div id="modalContainer" style="display:none"></div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
 <script>
-/* ---------- Data layer ---------- */
-window.STOCK_API_URL = window.STOCK_API_URL || 'https://script.google.com/macros/s/AKfycbyDoHMHze1w-118KKqHZ21KlEdC8Is8nhR8s5VWRTavt38UwYS-WjuqFcLwtzY22M9vjQ/exec';
-const LS_KEY='ledger_stock_v1';
-const GOOGLE_API_URL = (window.STOCK_API_URL || '').trim();
-const USE_GOOGLE_SHEET = !!GOOGLE_API_URL && !GOOGLE_API_URL.startsWith('PASTE_') && !GOOGLE_API_URL.includes('YOUR_GOOGLE_WEB_APP_URL');
+/**
+ * Application Core & State Management
+ */
+const STORAGE_KEY_DATA = 'ledger_stock_v2';
+const STORAGE_KEY_SETTINGS = 'ledger_settings_v2';
+const STORAGE_KEY_THEME = 'ledger_theme';
 
-function normalizeGoogleProduct(row){
-  const qty = Number(row.qty ?? row.current ?? 0);
-  const initial = Number(row.initial ?? qty);
-  const price = Number(row.price_per_unit ?? row.price ?? 0);
-  const img = row.image_url || row.img || mockImg((row.name || 'SKU').slice(0, 3).toUpperCase(), '#1f6b3f');
+// Default Sample Data
+function getSeedData() {
+  const now = Date.now();
+  const day = 86400000;
   return {
-    id: String(row.product_id || row.id || 'p_' + Date.now() + Math.random()),
-    name: row.name || 'Unnamed product',
-    unit: row.unit || 'ชิ้น',
-    initial,
-    current: qty,
-    price,
-    img,
-    mfg: row.mfg_date || '',
-    expiry: row.expiry_date || '',
-    supplier: row.supplier || '',
-    status: row.status || 'OK',
-    category: row.category || ''
+    products: [
+      { id: 'P001', name: 'ปุ๋ยอินทรีย์เคมี 16-16-16', category: 'ปุ๋ย', unit: 'กระสอบ', initial: 100, current: 78, min_stock: 15, price: 650, supplier: 'บจก. ก้าวหน้าการเกษตร', mfg: '2026-06-01', expiry: '2027-06-01', img: '' },
+      { id: 'P002', name: 'เคมีภัณฑ์ปรับปรุงคุณภาพดิน pH12', category: 'เคมีภัณฑ์', unit: 'กระสอบ', initial: 50, current: 24, min_stock: 10, price: 480, supplier: 'หจก. ทรัพยากรดิน', mfg: '2026-05-10', expiry: '2026-11-15', img: '' },
+      { id: 'P003', name: 'มูลชี้วัวอัดเม็ด SPRING', category: 'ปุ๋ย', unit: 'กระสอบ', initial: 40, current: 0, min_stock: 8, price: 290, supplier: 'ฟาร์มสุขใจ', mfg: '2026-04-05', expiry: '2026-10-05', img: '' },
+      { id: 'P004', name: 'ฮอร์โมนพืช บำรุงรากและผล', category: 'เคมีภัณฑ์', unit: 'แกลลอน', initial: 60, current: 42, min_stock: 10, price: 520, supplier: 'บจก. เกษตรไทยอินเตอร์', mfg: '2026-07-20', expiry: '2027-01-20', img: '' },
+      { id: 'P005', name: 'ปุ๋ยอินทรีย์ละลายช้า ออสโมโค้ท', category: 'ปุ๋ย', unit: 'กล่อง', initial: 30, current: 16, min_stock: 5, price: 360, supplier: 'บจก. ก้าวหน้าการเกษตร', mfg: '2026-04-30', expiry: '2026-10-30', img: '' },
+      { id: 'P006', name: 'สารสกัดชีวภาพ ฮูมิคส์เข้มข้น', category: 'เคมีภัณฑ์', unit: 'ขวด', initial: 45, current: 8, min_stock: 10, price: 220, supplier: 'หจก. ไบโอฟาร์ม', mfg: '2026-03-20', expiry: '2026-09-20', img: '' },
+      { id: 'P007', name: 'ถุงเพาะชำสีดำ 4x6 นิ้ว', category: 'อุปกรณ์', unit: 'มัด', initial: 120, current: 95, min_stock: 20, price: 85, supplier: 'โรงงานพลาสติกไทย', mfg: '2026-01-15', expiry: '', img: '' }
+    ],
+    tx: [
+      { id: 'T001', pid: 'P001', type: 'in', qty: 100, reason: 'รับสินค้าเริ่มต้น', note: 'ล็อตรับเข้าเริ่มต้นปี', ts: now - (15 * day) },
+      { id: 'T002', pid: 'P001', type: 'out', qty: 22, reason: 'เบิกจ่าย', note: 'ฝ่ายผลิตแปลงทดลอง', ts: now - (10 * day) },
+      { id: 'T003', pid: 'P002', type: 'out', qty: 26, reason: 'เบิกจ่าย', note: 'โครงการฟื้นฟูดินแปลง 4', ts: now - (7 * day) },
+      { id: 'T004', pid: 'P003', type: 'out', qty: 40, reason: 'เบิกจ่าย', note: 'จัดส่งเกษตรกรชุมชน', ts: now - (5 * day) },
+      { id: 'T005', pid: 'P006', type: 'out', qty: 37, reason: 'เบิกจ่าย', note: 'ฉีดพ่นสวนผลไม้', ts: now - (2 * day) },
+      { id: 'T006', pid: 'P007', type: 'out', qty: 25, reason: 'เบิกจ่าย', note: 'เพาะกล้าไม้รอบใหม่', ts: now - (1 * day) }
+    ]
   };
 }
 
-function normalizeGoogleMovement(row){
+function getDefaultSettings() {
   return {
-    id: String(row.movement_id || row.id || 'm_' + Date.now() + Math.random()),
-    pid: String(row.product_id || row.pid || ''),
-    type: String(row.movement_type || row.type || 'out').toLowerCase() === 'in' ? 'in' : 'out',
-    qty: Number(row.qty || 0),
-    note: row.note || row.reason || 'Moved from Google Sheet',
-    ts: row.created_at ? new Date(row.created_at).getTime() : Date.now()
+    companyName: 'LEDGER STOCK',
+    companyDesc: 'ระบบจัดการสต๊อกและคลังสินค้า พร้อมระบบบันทึกรับ-จ่าย และเชื่อมต่อ Google Sheets',
+    warehouseName: 'คลังสินค้าหลัก',
+    userName: 'ผู้จัดการคลัง',
+    userAvatar: '',
+    googleApiUrl: '',
+    currency: 'THB',
+    autoSync: true
   };
 }
 
-function showDoneOverlay(msg){
-  const ov=document.createElement('div');
-  ov.className='done-overlay';
-  ov.innerHTML=`<div class="done-card"><div class="done-check">✓</div><div class="done-msg">${msg||'ทำรายการเสร็จสิ้น'}</div></div>`;
-  document.body.appendChild(ov);
-  setTimeout(()=>{
-    ov.classList.add('fade-out');
-    setTimeout(()=>ov.remove(),300);
-  },3000);
-}
-function mockImg(label,bg){
-  const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><rect width='200' height='200' fill='${bg}'/><circle cx='100' cy='82' r='40' fill='#ffffff' opacity='.18'/><text x='100' y='95' font-family='Inter,sans-serif' font-size='34' font-weight='800' fill='#ffffff' text-anchor='middle'>${label}</text><text x='100' y='128' font-family='Inter,sans-serif' font-size='13' fill='#ffffff' opacity='.85' text-anchor='middle'>ตัวอย่างสินค้า</text></svg>`;
-  return 'data:image/svg+xml,'+encodeURIComponent(svg);
-}
-function seedData(){
-  const now=Date.now();
-  const products=[
-    {id:'p1',name:'เคมีภัณฑ์ปรับปรุงคุณภาพดิน (pH12)',unit:'กระสอบ',initial:30,current:24,price:450,img:mockImg('pH12','#1f6b3f'),mfg:'2026-05-10',expiry:'2026-11-15'},
-    {id:'p2',name:'ปุ๋ยกระถิน 16-16-16',unit:'กระสอบ',initial:80,current:58,price:620,img:mockImg('16-16-16','#2f7d46'),mfg:'2026-06-01',expiry:'2027-06-01'},
-    {id:'p3',name:'มูลชี้วัว SPRING',unit:'กระสอบ',initial:20,current:0,price:280,img:mockImg('SPRING','#8a5a2f'),mfg:'2026-04-05',expiry:'2026-10-05'},
-    {id:'p4',name:'โครออแกนิก สูตรบำรุงผล เพิ่มหวาน',unit:'ถัง',initial:100,current:76,price:190,img:mockImg('ออร์แกนิก','#3f8a5b'),mfg:'2026-07-20',expiry:'2027-01-20'},
-    {id:'p5',name:'ปุ๋ยอินทรีย์ ออสโมโค้ท 13-13-13',unit:'กล่อง',initial:35,current:18,price:340,img:mockImg('13-13-13','#4a9563'),mfg:'2026-04-30',expiry:'2026-10-30'},
-    {id:'p6',name:'สารชีวอินทรีย์ ฮูมิคส์ สูตรเร่งดอก เพิ่มการติดผล',unit:'ขวด',initial:40,current:12,price:150,img:mockImg('ฮูมิคส์','#6b8a2f'),mfg:'2026-03-20',expiry:'2026-09-20'},
-    {id:'p7',name:'ปุ๋ยอินทรีย์เม็ดน้ำค้างดาว TPI',unit:'กระสอบ',initial:25,current:5,price:510,img:mockImg('TPI','#2f6b52'),mfg:'2026-09-01',expiry:'2027-03-01'},
-  ];
-  const tx=[
-    {id:'t1',pid:'p1',type:'out',qty:6,note:'ฝ่ายจุรงศ์',ts:now-3*864e5},
-    {id:'t2',pid:'p2',type:'out',qty:22,note:'ฝ่ายบรรจุ',ts:now-5*864e5},
-    {id:'t3',pid:'p3',type:'out',qty:20,note:'แผนกโภช',ts:now-7*864e5},
-    {id:'t4',pid:'p4',type:'out',qty:24,note:'จัดส่งกลาง',ts:now-9*864e5},
-    {id:'t5',pid:'p5',type:'out',qty:17,note:'ฝ่ายสวนบุ',ts:now-11*864e5},
-    {id:'t6',pid:'p6',type:'in',qty:12,note:'ยอดรับเข้าคลัง',ts:now-13*864e5},
-  ];
-  return {products,tx};
-}
-async function fetchGoogleData() {
-  if (!USE_GOOGLE_SHEET) return null;
+let AppState = {
+  db: loadLocalData(),
+  settings: loadSettings(),
+  activeTab: 'overview',
+  overviewFilter: 'all', // all, total, low, out
+  categoryFilter: 'all',
+  searchQuery: '',
+  isSyncing: false
+};
+
+function loadLocalData() {
   try {
-    const productsRes = await fetch(`${GOOGLE_API_URL}?type=products`);
-    const movementsRes = await fetch(`${GOOGLE_API_URL}?type=stock_movements`);
-    if (!productsRes.ok || !movementsRes.ok) return null;
-
-    const productsJson = await productsRes.json();
-    const movementsJson = await movementsRes.json();
-
-    if (!Array.isArray(productsJson) || !Array.isArray(movementsJson)) return null;
-
-    return {
-      products: productsJson.map(normalizeGoogleProduct),
-      tx: movementsJson.map(normalizeGoogleMovement)
-    };
-  } catch (error) {
-    console.warn('Google Sheet fetch failed, falling back to local data:', error);
-    return null;
-  }
-}
-
-function loadData(){
-  try{const raw=localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw);}catch(e){}
-  const d=seedData(); saveData(d); return d;
-}
-function saveData(d){ try{localStorage.setItem(LS_KEY,JSON.stringify(d));}catch(e){} }
-let DB=loadData();
-
-async function hydrateFromGoogleIfAvailable(){
-  const remote = await fetchGoogleData();
-  if (remote) {
-    DB = remote;
-    saveData(DB);
-    render();
-  }
-}
-
-async function postGoogleData(payload, failureMessage){
-  try{
-    const response=await fetch(GOOGLE_API_URL,{
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(payload)
-    });
-    const text=await response.text();
-    let result;
-    try{ result=JSON.parse(text); }
-    catch(e){ throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (HTTP ${response.status})`); }
-    if(!response.ok) throw new Error(`HTTP ${response.status}`);
-    if(!result||!result.success) throw new Error(result&&result.message?result.message:'ไม่สามารถบันทึกข้อมูลได้');
-    return result;
-  }catch(error){
-    console.error('Google Sheets request failed:',error);
-    alert(`${failureMessage}: ${error&&error.message?error.message:'ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'}`);
-    return null;
-  }
-}
-
-function resetDemo(){ DB=seedData(); saveData(DB); render(); }
-
-function fmt(n){ return new Intl.NumberFormat('th-TH').format(n); }
-function fmtBaht(n){ return n||n===0? fmt(n)+' บาท' : '-'; }
-function dateStr(ts){ const d=new Date(ts); return d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}); }
-function statusOf(p){ if(p.current<=0) return {c:'out',t:'สินค้าหมด'}; if(p.current<=5) return {c:'low',t:'ใกล้หมด'}; return {c:'ok',t:'พร้อมใช้'}; }
-function monthsUntil(dateStr){
-  if(!dateStr) return null;
-  const now=new Date(), exp=new Date(dateStr);
-  let m=(exp.getFullYear()-now.getFullYear())*12+(exp.getMonth()-now.getMonth());
-  if(exp.getDate()<now.getDate()) m-=1;
-  return m;
-}
-function expiryTag(p){
-  const m=monthsUntil(p.expiry);
-  if(m===null) return '';
-  if(m<0) return `<div style="color:var(--red);font-size:11.5px;margin-top:3px;font-weight:700">⚠ หมดอายุแล้ว ${Math.abs(m)} เดือนก่อน</div>`;
-  if(m<=3) return `<div style="color:var(--red);font-size:11.5px;margin-top:3px;font-weight:700">⚠ ใกล้หมดอายุอีก ${m} เดือน</div>`;
-  return '';
-}
-
-let activeTab='overview';
-let overviewFilter='all';
-function setOverviewFilter(f){ overviewFilter=f; render(); }
-document.querySelectorAll('.tab-btn').forEach(b=>b.addEventListener('click',()=>{activeTab=b.dataset.tab; render();}));
-document.getElementById('searchInput').addEventListener('input',render);
-
-/* ---------- Renderers ---------- */
-function render(){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeTab));
-  const view=document.getElementById('view');
-  if(activeTab==='overview') view.innerHTML=renderOverview();
-  else if(activeTab==='move') { view.innerHTML=renderMove(); bindMove(); }
-  else if(activeTab==='manage'){ view.innerHTML=renderManage(); bindManage(); }
-  else if(activeTab==='history') view.innerHTML=renderHistory();
-  else if(activeTab==='dash'){ view.innerHTML=renderDash(); bindDash(); }
-}
-
-function renderOverview(){
-  const q=document.getElementById('searchInput').value.trim().toLowerCase();
-  let list=DB.products.filter(p=>p.name.toLowerCase().includes(q));
-  const total=DB.products.length;
-  const totalQty=DB.products.reduce((s,p)=>s+p.current,0);
-  const low=DB.products.filter(p=>p.current>0&&p.current<=5).length;
-  const out=DB.products.filter(p=>p.current<=0).length;
-  if(overviewFilter==='low') list=list.filter(p=>p.current>0&&p.current<=5);
-  else if(overviewFilter==='out') list=list.filter(p=>p.current<=0);
-  else if(overviewFilter==='total') list=list.filter(p=>p.current>5);
-  const recent=[...DB.tx].sort((a,b)=>b.ts-a.ts).slice(0,7);
-  const titles={all:'รายการคงเหลือ',total:'รายการคงเหลือ (พร้อมใช้)',low:'รายการใกล้หมด',out:'รายการสินค้าหมด'};
-  return `
-  <div class="grid4">
-    <div class="stat ${overviewFilter==='total'?'on':''}" onclick="setOverviewFilter('total')"><div class="lbl">รายการทั้งหมด</div><div class="num">${total} รายการ</div><div class="sub">หมวดหมู่พัสดุคงเหลือ</div></div>
-    <div class="stat ${overviewFilter==='all'?'on':''}" onclick="setOverviewFilter('all')"><div class="lbl">จำนวนคงเหลือรวม</div><div class="num">${fmt(totalQty)}</div><div class="sub">ทุกหน่วยนับรวมกัน</div></div>
-    <div class="stat ${overviewFilter==='low'?'on':''}" onclick="setOverviewFilter('low')"><div class="lbl">ใกล้หมด</div><div class="num">${low}</div><div class="sub">เหลือไม่เกิน 5 หน่วย</div></div>
-    <div class="stat ${overviewFilter==='out'?'on':''}" onclick="setOverviewFilter('out')"><div class="lbl">สินค้าหมด</div><div class="num">${out}</div><div class="sub">ต้องรับดำเนินการเติมสินค้า</div></div>
-  </div>
-  <div class="two-col">
-    <div class="card">
-      <div class="section-title">${titles[overviewFilter]}</div>
-      <div class="section-sub">แสดงข้อมูลพัสดุที่อยู่ในระบบจัดเก็บขณะนี้ ${overviewFilter!=='all'?'· <a href="#" onclick="setOverviewFilter(\'all\');return false;" style="color:var(--green-dk);font-weight:700">ล้างตัวกรอง</a>':''}</div>
-      <table><thead><tr><th>ชื่อสินค้า</th><th>หน่วยนับ</th><th>ยอดตั้งต้น</th><th>คงเหลือ</th><th>ราคา/หน่วย</th><th>สถานะ</th></tr></thead><tbody>
-      ${list.map(p=>{const s=statusOf(p);return `<tr><td>${p.name}${expiryTag(p)}</td><td>${p.unit}</td><td>${fmt(p.initial)}</td><td><b>${fmt(p.current)}</b></td><td>${fmtBaht(p.price)}</td><td><span class="pill ${s.c}">${s.t}</span></td></tr>`}).join('')||`<tr><td colspan=6 class="empty">ไม่พบสินค้า</td></tr>`}
-      </tbody></table>
-    </div>
-    <div class="card">
-      <div class="section-title">รายการล่าสุด</div>
-      <div class="section-sub">ความเคลื่อนไหวล่าสุดในคลังสินค้า</div>
-      <div class="recent">
-      ${recent.map(t=>{const p=DB.products.find(x=>x.id===t.pid); if(!p)return'';return `
-        <div class="recent-item"><div class="dot ${t.type}">${t.type==='in'?'เข้า':'ออก'}</div>
-        <div><div class="name">${p.name}</div><div class="meta">${dateStr(t.ts)} · ${t.note||'-'}</div></div></div>`}).join('')||`<div class="empty">ไม่มีรายการ</div>`}
-      </div>
-    </div>
-  </div>`;
-}
-
-function productOptions(sel){
-  return DB.products.map(p=>`<option value="${p.id}" ${p.id===sel?'selected':''}>${p.name}</option>`).join('');
-}
-
-function renderMove(){
-  return `
-  <div class="two-col">
-    <div class="card">
-      <div class="section-title">จัดการความเคลื่อนไหว</div>
-      <div class="section-sub">บันทึกรายการนำเข้า หรือเบิกจ่ายสินค้า</div>
-      <div class="form-grid">
-        <div><label>ประเภทรายการ</label>
-          <select id="mvType"><option value="out">เบิกจ่ายสินค้า</option><option value="in">นำเข้าสินค้า (สินค้าใหม่)</option></select>
-        </div>
-        <div><label id="mvProdLabel">สินค้า</label>
-          <select id="mvProd">${productOptions(DB.products[0]?.id)}</select>
-          <input type="text" id="mvProdNew" placeholder="พิมพ์ชื่อสินค้าใหม่..." style="display:none">
-        </div>
-      </div>
-      <div class="form-grid">
-        <div><label>วันที่ผลิต</label><input type="date" id="mvDateStart"></div>
-        <div><label>วันที่หมดอายุ</label><input type="date" id="mvDateEnd"></div>
-      </div>
-      <div class="stock-box"><span>คงเหลือปัจจุบัน</span><b id="mvStock">0</b></div>
-      <div class="stock-box"><span>ราคา/หน่วย (บาท)</span><input type="number" id="mvPrice" value="0" style="width:140px;text-align:right;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-weight:700;background:var(--card)"></div>
-      <div id="mvInfoRow" class="stock-box" style="display:none"><span id="mvInfoText"></span></div>
-      <div class="form-grid">
-        <div>
-          <label id="mvImgLabel">รูปสินค้า</label>
-          <div class="imgbox" id="mvImgBox" onclick="mvImgClick()">
-            <div class="ph">คลิกเพื่ออัปโหลดรูปสินค้าใหม่</div>
-          </div>
-          <input type="file" id="mvFile" accept="image/*" style="display:none">
-        </div>
-        <div>
-          <label>จำนวนพัสดุ</label>
-          <input type="number" id="mvQty" placeholder="ระบุจำนวนที่ต้องการ...">
-          <div style="margin-top:14px"><label>หมายเหตุความเคลื่อนไหว</label>
-          <textarea id="mvNote" placeholder="ระบุเหตุผล, เลขที่เอกสาร หรือวัตถุประสงค์"></textarea></div>
-        </div>
-      </div>
-      <div id="mvNewFields" style="display:none">
-        <div class="form-grid">
-          <div><label>หน่วยนับ</label><input type="text" id="mvNewUnit" placeholder="เช่น กระสอบ, กล่อง, ขวด"></div>
-        </div>
-      </div>
-      <div class="actions-row">
-        <button class="btn primary" onclick="saveMove()">บันทึกรายการ</button>
-        <button class="btn ghost" onclick="render()">ล้างข้อมูล</button>
-      </div>
-    </div>
-    <div class="tip-card">
-      <h4>ข้อแนะนำการใช้งาน</h4>
-      <div>ระบบจะตรวจสอบยอดคงเหลือก่อนบันทึกรายการ และป้องกันไม่ให้ยอดสินค้าติดลบในระบบคลัง</div>
-      <div class="note"><b style="color:var(--green-dk)">STOCK NOTE</b><br>หากยอดจริงไม่ตรงกับระบบ ให้ใช้เมนู 'จัดการสต๊อก' เพื่อปรับยอดสินค้าจากการตรวจนับสินค้าคงคลังรอบเดือน</div>
-    </div>
-  </div>`;
-}
-let mvCurrentIsIn=false;
-function mvImgClick(){ if(mvCurrentIsIn) document.getElementById('mvFile').click(); }
-function bindMove(){
-  const typeSel=document.getElementById('mvType'), prodSel=document.getElementById('mvProd');
-  const prodNew=document.getElementById('mvProdNew'), prodLabel=document.getElementById('mvProdLabel');
-  const stockEl=document.getElementById('mvStock'), imgBox=document.getElementById('mvImgBox');
-  const newFields=document.getElementById('mvNewFields'), imgLabel=document.getElementById('mvImgLabel');
-  const infoRow=document.getElementById('mvInfoRow'), infoText=document.getElementById('mvInfoText');
-  function refresh(){
-    const isIn=typeSel.value==='in';
-    mvCurrentIsIn=isIn;
-    newFields.style.display=isIn?'block':'none';
-    document.getElementById('mvDateStart').disabled=!isIn;
-    document.getElementById('mvDateEnd').disabled=!isIn;
-    document.getElementById('mvQty').placeholder=isIn?'ระบุจำนวนสินค้าใหม่ที่นำเข้า...':'ระบุจำนวนที่ต้องการเบิก...';
-    const priceEl=document.getElementById('mvPrice');
-    if(isIn){
-      prodLabel.textContent='สินค้า (พิมพ์ชื่อสินค้าใหม่)';
-      prodSel.style.display='none'; prodNew.style.display='block';
-      imgLabel.textContent='รูปสินค้า (สินค้าใหม่)';
-      imgBox.innerHTML='<div class="ph">คลิกเพื่ออัปโหลดรูปสินค้าใหม่</div>';
-      imgBox.style.cursor='pointer';
-      stockEl.textContent='0';
-      infoRow.style.display='none';
-      document.getElementById('mvDateStart').value=''; document.getElementById('mvDateEnd').value='';
-      priceEl.disabled=false; priceEl.value='0'; priceEl.style.background='var(--card)'; priceEl.style.color='var(--ink)';
-    } else {
-      prodLabel.textContent='สินค้า';
-      prodSel.style.display='block'; prodNew.style.display='none';
-      const p=DB.products.find(x=>x.id===prodSel.value);
-      stockEl.textContent=fmt(p?p.current:0);
-      imgLabel.textContent='รูปสินค้า (ข้อมูลเดิม)';
-      imgBox.style.cursor='default';
-      imgBox.innerHTML = p&&p.img? `<img src="${p.img}">` : `<div class="ph">ไม่มีรูปสินค้าที่บันทึกไว้</div>`;
-      infoRow.style.display='flex';
-      document.getElementById('mvDateStart').value=p&&p.mfg?p.mfg:'';
-      document.getElementById('mvDateEnd').value=p&&p.expiry?p.expiry:'';
-      priceEl.disabled=true; priceEl.value=p?(p.price||0):0; priceEl.style.background='var(--bg2)'; priceEl.style.color='var(--sub)';
-      const expTag=p?expiryTag(p).replace(/<div[^>]*>/,'').replace('</div>',''):'';
-      infoText.innerHTML = p? `หน่วยนับ: <b>${p.unit}</b>${p.mfg?` · วันที่ผลิต: <b>${p.mfg}</b>`:''}${p.expiry?` · วันหมดอายุ: <b>${p.expiry}</b>`:''}${expTag?` <span style="color:var(--red);font-weight:700">${expTag}</span>`:''}` : '';
+    const raw = localStorage.getItem(STORAGE_KEY_DATA);
+    if (raw) return JSON.parse(raw);
+    // Backward compatibility with v1
+    const v1 = localStorage.getItem('ledger_stock_v1');
+    if (v1) {
+      const parsed = JSON.parse(v1);
+      if (parsed.products) return parsed;
     }
+  } catch (e) {
+    console.error('Failed to load local DB:', e);
   }
-  typeSel.addEventListener('change',refresh);
-  prodSel.addEventListener('change',refresh);
-  document.getElementById('mvFile').addEventListener('change',e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ imgBox.innerHTML=`<img src="${r.result}">`; imgBox.dataset.data=r.result; };
-    r.readAsDataURL(f);
-  });
-  refresh();
+  const seed = getSeedData();
+  saveLocalData(seed);
+  return seed;
 }
-async function saveMove(){
-  const type=document.getElementById('mvType').value;
-  const qty=parseInt(document.getElementById('mvQty').value||'0',10);
-  const note=document.getElementById('mvNote').value.trim();
-  if(!qty||qty<=0){ alert('กรุณาระบุจำนวนพัสดุให้ถูกต้อง'); return; }
 
-  if (USE_GOOGLE_SHEET) {
-    if (type === 'in') {
-      const name=document.getElementById('mvProdNew').value.trim();
-      const unit=document.getElementById('mvNewUnit').value.trim();
-      if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
-      const payload = {
-        type: 'addProduct',
+function saveLocalData(db) {
+  try {
+    localStorage.setItem(STORAGE_KEY_DATA, JSON.stringify(db));
+  } catch (e) {
+    console.error('Failed to save to localStorage:', e);
+  }
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_SETTINGS);
+    if (raw) return { ...getDefaultSettings(), ...JSON.parse(raw) };
+  } catch (e) {}
+  return getDefaultSettings();
+}
+
+function saveSettings(settings) {
+  AppState.settings = settings;
+  try {
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    if (settings.googleApiUrl !== undefined) {
+      window.StockAPI.setStoredApiUrl(settings.googleApiUrl);
+    }
+  } catch (e) {}
+  applySettingsToUI();
+}
+
+function applySettingsToUI() {
+  const s = AppState.settings;
+  const companyEl = document.getElementById('displayCompanyName');
+  const descEl = document.getElementById('displayCompanyDesc');
+  const userEl = document.getElementById('displayUserName');
+  const whEl = document.getElementById('displayWarehouseName');
+  
+  if (companyEl) companyEl.textContent = s.companyName || 'LEDGER STOCK';
+  if (descEl) descEl.textContent = s.companyDesc || '';
+  if (userEl) userEl.textContent = s.userName || 'ผู้จัดการคลัง';
+  if (whEl) whEl.textContent = s.warehouseName || 'คลังสินค้าหลัก';
+  updateSyncBadge();
+}
+
+/* UI Feedback: Toast & Modals */
+function showToast(message, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icon = type === 'success' ? '✓' : (type === 'error' ? '✕' : 'ℹ');
+  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
+function openModal(title, bodyHtml, footerHtml = '') {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = `
+    <div class="modal-overlay" onclick="closeModalOnBackdrop(event)">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>${title}</h3>
+          <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body">${bodyHtml}</div>
+        ${footerHtml ? `<div class="modal-footer" style="margin-top:20px;display:flex;justify-content:flex-end;gap:10px">${footerHtml}</div>` : ''}
+      </div>
+    </div>
+  `;
+  container.style.display = 'block';
+}
+
+function closeModal() {
+  const container = document.getElementById('modalContainer');
+  container.innerHTML = '';
+  container.style.display = 'none';
+}
+
+function closeModalOnBackdrop(e) {
+  if (e.target.classList.contains('modal-overlay')) {
+    closeModal();
+  }
+}
+
+/* Formatting Helpers */
+function fmt(num) {
+  return new Intl.NumberFormat('th-TH').format(Number(num) || 0);
+}
+function fmtBaht(num) {
+  return num !== undefined && num !== null ? fmt(num) + ' ฿' : '-';
+}
+function formatDate(ts) {
+  if (!ts) return '-';
+  const d = new Date(ts);
+  return d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' }) + ' ' + 
+         d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+}
+function getProductStatus(p) {
+  const qty = Number(p.current || 0);
+  const min = Number(p.min_stock || 5);
+  if (qty <= 0) return { c: 'out', t: 'สินค้าหมด' };
+  if (qty <= min) return { c: 'low', t: 'ใกล้หมด' };
+  return { c: 'ok', t: 'พร้อมใช้' };
+}
+function getExpiryStatus(expiryDate) {
+  if (!expiryDate) return null;
+  const now = new Date();
+  const exp = new Date(expiryDate);
+  const diffTime = exp.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 0) {
+    return { label: `หมดอายุแล้ว ${Math.abs(Math.floor(diffDays / 30))} เดือน`, isExpired: true };
+  } else if (diffDays <= 90) {
+    return { label: `เหลืออีก ${Math.max(1, Math.floor(diffDays / 30))} เดือน`, isWarning: true };
+  }
+  return null;
+}
+
+/* Theme Handler */
+function initTheme() {
+  const saved = localStorage.getItem(STORAGE_KEY_THEME);
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem(STORAGE_KEY_THEME, next);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = next === 'dark' ? '☀️' : '🌙';
+}
+
+/* Google Sheets Sync System */
+function isGoogleConfigured() {
+  return window.StockAPI.isConfigured(AppState.settings.googleApiUrl);
+}
+
+function updateSyncBadge() {
+  const badge = document.getElementById('syncBadge');
+  const dot = document.getElementById('syncDot');
+  const text = document.getElementById('syncText');
+  if (!badge) return;
+
+  if (AppState.isSyncing) {
+    dot.className = 'sync-dot syncing';
+    text.textContent = 'กำลังซิงค์...';
+  } else if (isGoogleConfigured()) {
+    dot.className = 'sync-dot';
+    text.textContent = 'Google Sheet เชื่อมต่อแล้ว';
+  } else {
+    dot.className = 'sync-dot offline';
+    text.textContent = 'โหมดออฟไลน์ (ในเครื่อง)';
+  }
+}
+
+async function manualSync() {
+  if (!isGoogleConfigured()) {
+    showToast('กรุณากำหนด URL ของ Google Sheet ในหน้าตั้งค่าก่อน', 'info');
+    switchTab('settings');
+    return;
+  }
+  AppState.isSyncing = true;
+  updateSyncBadge();
+
+  try {
+    const remoteProds = await window.StockAPI.getProducts(AppState.settings.googleApiUrl);
+    const remoteMoves = await window.StockAPI.getMovements(AppState.settings.googleApiUrl);
+
+    if (Array.isArray(remoteProds) && remoteProds.length > 0) {
+      AppState.db.products = remoteProds.map(r => ({
+        id: String(r.product_id || r.id || 'P_' + Date.now()),
+        name: r.name || 'Unnamed',
+        category: r.category || 'ทั่วไป',
+        unit: r.unit || 'ชิ้น',
+        initial: Number(r.initial || r.qty || 0),
+        current: Number(r.qty || 0),
+        min_stock: Number(r.min_stock || 5),
+        price: Number(r.price_per_unit || 0),
+        supplier: r.supplier || '',
+        mfg: r.mfg_date || '',
+        expiry: r.expiry_date || '',
+        img: r.image_url || ''
+      }));
+    }
+
+    if (Array.isArray(remoteMoves) && remoteMoves.length > 0) {
+      AppState.db.tx = remoteMoves.map(m => ({
+        id: String(m.movement_id || m.id || 'T_' + Date.now()),
+        pid: String(m.product_id || ''),
+        type: String(m.movement_type || 'IN').toLowerCase(),
+        qty: Number(m.qty || 0),
+        reason: m.reason || '',
+        note: m.note || '',
+        ts: m.created_at ? new Date(m.created_at).getTime() : Date.now()
+      }));
+    }
+
+    saveLocalData(AppState.db);
+    renderCurrentTab();
+    showToast('ซิงค์ข้อมูลกับ Google Sheet สำเร็จแล้ว');
+  } catch (err) {
+    console.warn('Sync failed:', err);
+    showToast('ไม่สามารถซิงค์ได้: ' + (err.message || 'โปรดตรวจสอบการเชื่อมต่อ'), 'error');
+  } finally {
+    AppState.isSyncing = false;
+    updateSyncBadge();
+  }
+}
+
+/* Tabs Navigation */
+function switchTab(tabName) {
+  AppState.activeTab = tabName;
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabName);
+  });
+  renderCurrentTab();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+function handleSearch() {
+  AppState.searchQuery = document.getElementById('globalSearchInput').value.trim().toLowerCase();
+  renderCurrentTab();
+}
+
+function renderCurrentTab() {
+  const view = document.getElementById('mainView');
+  const tab = AppState.activeTab;
+  if (tab === 'overview') renderOverviewTab(view);
+  else if (tab === 'move') renderMoveTab(view);
+  else if (tab === 'manage') renderManageTab(view);
+  else if (tab === 'history') renderHistoryTab(view);
+  else if (tab === 'dash') renderDashTab(view);
+  else if (tab === 'settings') renderSettingsTab(view);
+}
+
+/* =====================================================================
+   TAB 1: Overview (ภาพรวมคลัง)
+   ===================================================================== */
+function renderOverviewTab(container) {
+  const q = AppState.searchQuery;
+  const cat = AppState.categoryFilter;
+  const filter = AppState.overviewFilter;
+
+  // Filter products
+  let list = AppState.db.products.filter(p => {
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.id && p.id.toLowerCase().includes(q)) || (p.category && p.category.toLowerCase().includes(q));
+    const matchCat = cat === 'all' || p.category === cat;
+    return matchQ && matchCat;
+  });
+
+  const totalItems = AppState.db.products.length;
+  const totalQty = AppState.db.products.reduce((sum, p) => sum + Number(p.current || 0), 0);
+  const totalValue = AppState.db.products.reduce((sum, p) => sum + (Number(p.current || 0) * Number(p.price || 0)), 0);
+  const lowCount = AppState.db.products.filter(p => Number(p.current || 0) > 0 && Number(p.current || 0) <= Number(p.min_stock || 5)).length;
+  const outCount = AppState.db.products.filter(p => Number(p.current || 0) <= 0).length;
+
+  if (filter === 'low') list = list.filter(p => Number(p.current || 0) > 0 && Number(p.current || 0) <= Number(p.min_stock || 5));
+  else if (filter === 'out') list = list.filter(p => Number(p.current || 0) <= 0);
+  else if (filter === 'total') list = list.filter(p => Number(p.current || 0) > Number(p.min_stock || 5));
+
+  // Extract categories
+  const categories = ['all', ...new Set(AppState.db.products.map(p => p.category || 'ทั่วไป'))];
+
+  // Recent 8 movements
+  const recent = [...AppState.db.tx].sort((a, b) => b.ts - a.ts).slice(0, 8);
+
+  container.innerHTML = `
+    <!-- KPI Summary Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card ${filter === 'all' ? 'active' : ''}" onclick="setOverviewFilter('all')">
+        <div class="kpi-label">รายการสินค้าทั้งหมด <span>📦</span></div>
+        <div class="kpi-num">${fmt(totalItems)} <span style="font-size:14px;font-weight:600">รายการ</span></div>
+        <div class="kpi-desc">พัสดุและสินค้าในระบบทั้งหมด</div>
+      </div>
+
+      <div class="kpi-card ${filter === 'total' ? 'active' : ''}" onclick="setOverviewFilter('total')">
+        <div class="kpi-label">จำนวนสต๊อกรวม <span>📊</span></div>
+        <div class="kpi-num">${fmt(totalQty)} <span style="font-size:14px;font-weight:600">หน่วย</span></div>
+        <div class="kpi-desc">มูลค่ารวม ${fmtBaht(totalValue)}</div>
+      </div>
+
+      <div class="kpi-card ${filter === 'low' ? 'active' : ''}" onclick="setOverviewFilter('low')">
+        <div class="kpi-label">สินค้าใกล้หมด <span>⚠️</span></div>
+        <div class="kpi-num" style="color:var(--amber)">${fmt(lowCount)} <span style="font-size:14px;font-weight:600">รายการ</span></div>
+        <div class="kpi-desc">เหลือน้อยกว่าเกณฑ์ขั้นต่ำ</div>
+      </div>
+
+      <div class="kpi-card ${filter === 'out' ? 'active' : ''}" onclick="setOverviewFilter('out')">
+        <div class="kpi-label">สินค้าหมดสต๊อก <span>🚨</span></div>
+        <div class="kpi-num" style="color:var(--red)">${fmt(outCount)} <span style="font-size:14px;font-weight:600">รายการ</span></div>
+        <div class="kpi-desc">ต้องการการสั่งซื้อ/เติมสินค้าทันที</div>
+      </div>
+    </div>
+
+    <!-- Main Content Two-Column -->
+    <div class="two-col">
+      <!-- Products Table Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <div class="section-title">📋 บัญชีสินค้าคงเหลือ</div>
+            <div class="section-sub">
+              แสดงข้อมูลสินค้าคงคลังปัจจุบัน ${filter !== 'all' ? `(กรอง: ${filter === 'low' ? 'ใกล้หมด' : (filter === 'out' ? 'หมดสต๊อก' : 'พร้อมใช้')}) · <a href="#" onclick="setOverviewFilter('all');return false;" style="color:var(--primary);font-weight:700">ล้างตัวกรอง</a>` : ''}
+            </div>
+          </div>
+          <button class="btn sm ghost" onclick="switchTab('manage')">+ จัดการ/เพิ่มสินค้า</button>
+        </div>
+
+        <!-- Category filter pills -->
+        <div class="filter-pills">
+          ${categories.map(c => `
+            <span class="filter-pill ${cat === c ? 'active' : ''}" onclick="setCategoryFilter('${c}')">
+              ${c === 'all' ? 'ทุกหมวดหมู่' : c}
+            </span>
+          `).join('')}
+        </div>
+
+        <div class="table-wrap">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>สินค้า / รหัส</th>
+                <th>หมวดหมู่</th>
+                <th>คงเหลือ</th>
+                <th>ราคาต่อหน่วย</th>
+                <th>มูลค่ารวม</th>
+                <th>สถานะ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${list.length > 0 ? list.map(p => {
+                const s = getProductStatus(p);
+                const exp = getExpiryStatus(p.expiry);
+                const val = (Number(p.current || 0) * Number(p.price || 0));
+                const thumb = p.img || generateDefaultThumb(p.name);
+                return `
+                  <tr>
+                    <td>
+                      <div class="prod-cell">
+                        <img src="${thumb}" class="prod-thumb" alt="${p.name}">
+                        <div>
+                          <div class="prod-info-name">${p.name}</div>
+                          <div class="prod-info-meta">
+                            <span>SKU: ${p.id}</span>
+                            ${exp ? `<span style="color:${exp.isExpired ? 'var(--red)' : 'var(--amber)'};font-weight:700">⏳ ${exp.label}</span>` : ''}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span class="badge" style="font-size:11px">${p.category || 'ทั่วไป'}</span></td>
+                    <td>
+                      <b>${fmt(p.current)}</b> <span style="font-size:12px;color:var(--text-muted)">${p.unit}</span>
+                    </td>
+                    <td>${fmtBaht(p.price)}</td>
+                    <td><b>${fmtBaht(val)}</b></td>
+                    <td><span class="pill ${s.c}">${s.t}</span></td>
+                  </tr>
+                `;
+              }).join('') : `
+                <tr>
+                  <td colspan="6" class="empty-state">
+                    <div class="empty-icon">🔍</div>
+                    <div>ไม่พบรายการสินค้าที่ตรงกับเงื่อนไขการค้นหา</div>
+                  </td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Movements Card -->
+      <div class="card">
+        <div class="card-title-row">
+          <div>
+            <div class="section-title">⏱ ความเคลื่อนไหวล่าสุด</div>
+            <div class="section-sub">บันทึกเบิกจ่ายและรับเข้า 8 รายการล่าสุด</div>
+          </div>
+          <button class="btn sm ghost" onclick="switchTab('history')">ดูทั้งหมด</button>
+        </div>
+
+        <div class="recent-list">
+          ${recent.length > 0 ? recent.map(t => {
+            const p = AppState.db.products.find(x => x.id === t.pid);
+            const isOut = t.type === 'out';
+            const isAdjust = t.type === 'adjust';
+            const iconClass = isAdjust ? 'adjust' : (isOut ? 'out' : 'in');
+            const iconText = isAdjust ? '⇄' : (isOut ? '📤' : '📥');
+            const typeLabel = isAdjust ? 'ปรับปรุง' : (isOut ? 'เบิกจ่าย' : 'รับเข้า');
+
+            return `
+              <div class="recent-row">
+                <div class="move-icon-badge ${iconClass}">${iconText}</div>
+                <div style="flex:1">
+                  <div style="display:flex;justify-content:space-between;align-items:center">
+                    <span style="font-weight:700;font-size:13px">${p ? p.name : 'สินค้าถูกลบ'}</span>
+                    <span style="font-weight:800;font-size:13.5px;color:${isOut ? 'var(--red)' : 'var(--primary)'}">
+                      ${isOut ? '-' : '+'}${fmt(t.qty)} ${p ? p.unit : ''}
+                    </span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">
+                    ${formatDate(t.ts)} · <span style="font-weight:600">${typeLabel}</span> ${t.note ? `· ${t.note}` : ''}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('') : `
+            <div class="empty-state">
+              <div class="empty-icon">📝</div>
+              <div>ยังไม่มีประวัติความเคลื่อนไหว</div>
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function setOverviewFilter(f) {
+  AppState.overviewFilter = f;
+  renderCurrentTab();
+}
+
+function setCategoryFilter(c) {
+  AppState.categoryFilter = c;
+  renderCurrentTab();
+}
+
+function generateDefaultThumb(name) {
+  const initial = (name || 'SKU').slice(0, 2).toUpperCase();
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 80'><rect width='80' height='80' rx='10' fill='%23047857'/><text x='40' y='46' font-family='Inter,sans-serif' font-size='22' font-weight='700' fill='%23fff' text-anchor='middle'>${initial}</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+/* =====================================================================
+   TAB 2: Movements (เบิก / รับสินค้า)
+   ===================================================================== */
+let moveMode = 'out'; // 'out', 'in', 'new'
+
+function renderMoveTab(container) {
+  const products = AppState.db.products;
+  const selProd = products[0] || null;
+
+  container.innerHTML = `
+    <div class="two-col">
+      <div class="card">
+        <div class="section-title">⇄ ทำรายการความเคลื่อนไหวสต๊อก</div>
+        <div class="section-sub">เลือกประเภทรายการเพื่อเบิกจ่าย รับเข้าสต๊อก หรือเพิ่มรายการสินค้าใหม่</div>
+
+        <!-- Action Mode Switcher -->
+        <div class="move-type-tabs">
+          <button class="move-tab-btn ${moveMode === 'out' ? 'active out' : ''}" onclick="setMoveMode('out')">📤 เบิกจ่ายสินค้า (OUT)</button>
+          <button class="move-tab-btn ${moveMode === 'in' ? 'active in' : ''}" onclick="setMoveMode('in')">📥 รับเข้าสินค้าเดิม (IN)</button>
+          <button class="move-tab-btn ${moveMode === 'new' ? 'active new' : ''}" onclick="setMoveMode('new')">✨ รับสินค้าใหม่ (NEW SKU)</button>
+        </div>
+
+        <form id="moveForm" onsubmit="handleSaveMove(event)">
+          <!-- Existing Product Selection (For OUT and IN) -->
+          <div id="existingProductSection" style="${moveMode === 'new' ? 'display:none' : 'block'}">
+            <div class="form-group">
+              <label>เลือกสินค้าที่ต้องการทำรายการ <span style="color:var(--red)">*</span></label>
+              <select id="moveProdSelect" onchange="updateMoveCalculation()">
+                ${products.map(p => `
+                  <option value="${p.id}">${p.name} (คงเหลือ: ${fmt(p.current)} ${p.unit})</option>
+                `).join('')}
+              </select>
+            </div>
+
+            <!-- Real-time calculation and stock callout -->
+            <div class="calc-callout" id="calcCallout">
+              <div class="calc-item">
+                <span class="label">คงเหลือในระบบ</span>
+                <span class="val" id="calcCurrentQty">0</span>
+              </div>
+              <div class="calc-item">
+                <span class="label">จำนวนทำรายการ</span>
+                <span class="val" id="calcDeltaQty">0</span>
+              </div>
+              <div class="calc-item">
+                <span class="label">ยอดคงเหลือใหม่หลังบันทึก</span>
+                <span class="val highlight" id="calcRemainingQty">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- New Product Inputs (Only for NEW mode) -->
+          <div id="newProductSection" style="${moveMode === 'new' ? 'display:block' : 'none'}">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>ชื่อสินค้าใหม่ <span style="color:var(--red)">*</span></label>
+                <input type="text" id="newProdName" placeholder="เช่น ปุ๋ยอินทรีย์นาโน ตราดอกบัว">
+              </div>
+              <div class="form-group">
+                <label>หมวดหมู่</label>
+                <input type="text" id="newProdCat" placeholder="เช่น ปุ๋ย, เคมีภัณฑ์, อุปกรณ์">
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>หน่วยนับ <span style="color:var(--red)">*</span></label>
+                <input type="text" id="newProdUnit" placeholder="เช่น กระสอบ, กล่อง, แกลลอน, ชิ้น">
+              </div>
+              <div class="form-group">
+                <label>ราคาต่อหน่วย (บาท)</label>
+                <input type="number" id="newProdPrice" min="0" step="any" placeholder="0">
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>ซัพพลายเออร์ / แหล่งที่มา</label>
+                <input type="text" id="newProdSupplier" placeholder="ชื่อบริษัท หรือผู้จัดจำหน่าย">
+              </div>
+              <div class="form-group">
+                <label>แจ้งเตือนเมื่อเหลือน้อยกว่า (ชิ้น)</label>
+                <input type="number" id="newProdMinStock" value="5" min="0">
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="form-group">
+                <label>วันที่ผลิต (MFG)</label>
+                <input type="date" id="newProdMfg">
+              </div>
+              <div class="form-group">
+                <label>วันหมดอายุ (EXP)</label>
+                <input type="date" id="newProdExp">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>รูปภาพสินค้า</label>
+              <div class="img-upload-box" id="newProdImgBox" onclick="document.getElementById('newProdImgFile').click()">
+                <div class="upload-hint">📷 คลิกเพื่อเลือกรูปภาพสินค้า</div>
+              </div>
+              <input type="file" id="newProdImgFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'newProdImgBox')">
+            </div>
+          </div>
+
+          <!-- Quantity and Notes for All Modes -->
+          <div class="form-grid">
+            <div class="form-group">
+              <label>จำนวนพัสดุ <span style="color:var(--red)">*</span></label>
+              <input type="number" id="moveQtyInput" min="1" placeholder="ระบุจำนวนตัวเลข..." required oninput="updateMoveCalculation()">
+            </div>
+            <div class="form-group">
+              <label>เหตุผล / วัตถุประสงค์</label>
+              <input type="text" id="moveReasonInput" placeholder="เช่น เบิกใช้ในโครงการ, รับสินค้าล็อตใหม่, คืนสต๊อก">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>หมายเหตุเพิ่มเติม / เลขที่เอกสารอ้างอิง</label>
+            <textarea id="moveNoteInput" placeholder="ระบุเลขที่ใบเบิก, แผนกผู้รับ, หรือรายละเอียดอื่นๆ..."></textarea>
+          </div>
+
+          <div style="display:flex;gap:12px;margin-top:10px">
+            <button type="submit" class="btn primary" id="btnSaveMove" style="flex:1">💾 บันทึกรายการ</button>
+            <button type="button" class="btn ghost" onclick="renderMoveTab(document.getElementById('mainView'))">ล้างแบบฟอร์ม</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Instruction / Guide Card -->
+      <div class="card">
+        <div class="section-title">💡 คำแนะนำการใช้งาน</div>
+        <div class="section-sub">ข้อกำหนดและระบบตรวจสอบความถูกต้อง</div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--text-sub);margin-top:14px;line-height:1.6">
+          <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border-left:3px solid var(--primary)">
+            <b style="color:var(--text-main)">📤 การเบิกจ่าย (Stock Out):</b><br>
+            ระบบจะตรวจสอบไม่ให้ยอดเบิกจ่ายเกินกว่าจำนวนที่มีอยู่จริงในคลังสินค้า เพื่อป้องกันยอดติดลบ
+          </div>
+          <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border-left:3px solid var(--accent)">
+            <b style="color:var(--text-main)">📥 การรับสินค้าเดิม (Restock):</b><br>
+            ใช้เมื่อมีสินค้าล็อตใหม่เข้ามาเติมในคลังสำหรับสินค้าที่มีรหัสเดิมอยู่แล้ว
+          </div>
+          <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm);border-left:3px solid var(--amber)">
+            <b style="color:var(--text-main)">✨ รับสินค้าใหม่ (New SKU):</b><br>
+            จะสร้างรหัสสินค้าใหม่ พร้อมบันทึกจำนวนที่รับเข้าเป็นยอดตั้งต้นของรายการนั้น
+          </div>
+          <div style="padding:12px;background:var(--bg-subtle);border-radius:var(--radius-sm)">
+            <b style="color:var(--text-main)">☁ การเชื่อมต่อ Google Sheets:</b><br>
+            หากเปิดใช้งานการเชื่อมต่อ ข้อมูลจะถูกส่งไปบันทึกทั้งในชีต <code style="font-weight:700">products</code> และ <code style="font-weight:700">stock_movements</code> อัตโนมัติ
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  updateMoveCalculation();
+}
+
+function setMoveMode(mode) {
+  moveMode = mode;
+  renderMoveTab(document.getElementById('mainView'));
+}
+
+function updateMoveCalculation() {
+  if (moveMode === 'new') return;
+  const select = document.getElementById('moveProdSelect');
+  const qtyInput = document.getElementById('moveQtyInput');
+  const curEl = document.getElementById('calcCurrentQty');
+  const deltaEl = document.getElementById('calcDeltaQty');
+  const remEl = document.getElementById('calcRemainingQty');
+
+  if (!select || !qtyInput || !curEl) return;
+
+  const pid = select.value;
+  const p = AppState.db.products.find(x => x.id === pid);
+  const current = p ? Number(p.current || 0) : 0;
+  const delta = Math.abs(Number(qtyInput.value) || 0);
+  const isOut = moveMode === 'out';
+  const remaining = isOut ? (current - delta) : (current + delta);
+
+  curEl.textContent = `${fmt(current)} ${p ? p.unit : ''}`;
+  deltaEl.textContent = `${isOut ? '-' : '+'}${fmt(delta)} ${p ? p.unit : ''}`;
+  remEl.textContent = `${fmt(remaining)} ${p ? p.unit : ''}`;
+
+  if (isOut && remaining < 0) {
+    remEl.style.color = 'var(--red)';
+    remEl.textContent += ' ⚠️ ไม่เพียงพอ!';
+  } else {
+    remEl.style.color = 'var(--primary)';
+  }
+}
+
+function handleImageUpload(e, targetBoxId) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const box = document.getElementById(targetBoxId);
+    if (box) {
+      box.innerHTML = `<img src="${reader.result}" alt="Preview">`;
+      box.dataset.imgData = reader.result;
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function handleSaveMove(e) {
+  e.preventDefault();
+  const qty = Number(document.getElementById('moveQtyInput').value);
+  const reason = document.getElementById('moveReasonInput').value.trim();
+  const note = document.getElementById('moveNoteInput').value.trim();
+
+  if (!qty || qty <= 0) {
+    showToast('กรุณาระบุจำนวนสินค้าที่ถูกต้อง', 'error');
+    return;
+  }
+
+  const now = Date.now();
+  const btn = document.getElementById('btnSaveMove');
+  if (btn) btn.disabled = true;
+
+  try {
+    if (moveMode === 'new') {
+      const name = document.getElementById('newProdName').value.trim();
+      const unit = document.getElementById('newProdUnit').value.trim();
+      const cat = document.getElementById('newProdCat').value.trim() || 'ทั่วไป';
+      const price = Number(document.getElementById('newProdPrice').value) || 0;
+      const supplier = document.getElementById('newProdSupplier').value.trim();
+      const minStock = Number(document.getElementById('newProdMinStock').value) || 5;
+      const mfg = document.getElementById('newProdMfg').value;
+      const exp = document.getElementById('newProdExp').value;
+      const img = document.getElementById('newProdImgBox').dataset.imgData || '';
+
+      if (!name || !unit) {
+        showToast('กรุณากรอกชื่อสินค้าและหน่วยนับ', 'error');
+        if (btn) btn.disabled = false;
+        return;
+      }
+
+      const pid = 'P' + Date.now();
+      const newProduct = {
+        id: pid,
         name,
+        category: cat,
         unit,
-        qty,
-        min_stock: 0,
-        price_per_unit: Number(document.getElementById('mvPrice').value || 0),
-        category: 'General',
-        supplier: 'Google Sheet',
-        image_url: document.getElementById('mvImgBox').dataset.data || '',
-        mfg_date: document.getElementById('mvDateStart').value || '',
-        expiry_date: document.getElementById('mvDateEnd').value || ''
+        initial: qty,
+        current: qty,
+        min_stock: minStock,
+        price,
+        supplier,
+        mfg,
+        expiry: exp,
+        img
       };
-      const result=await postGoogleData(payload,'เพิ่มข้อมูลไปยัง Google Sheet ไม่สำเร็จ');
-      if(!result) return;
-      await hydrateFromGoogleIfAvailable();
-      showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
+
+      AppState.db.products.push(newProduct);
+      AppState.db.tx.push({
+        id: 'T' + Date.now(),
+        pid,
+        type: 'in',
+        qty,
+        reason: reason || 'รับสินค้าใหม่เข้าคลัง',
+        note,
+        ts: now
+      });
+
+      saveLocalData(AppState.db);
+
+      // Sync to Google Sheets if connected
+      if (isGoogleConfigured()) {
+        try {
+          await window.StockAPI.addProduct({
+            product_id: pid,
+            name,
+            category: cat,
+            unit,
+            qty,
+            min_stock: minStock,
+            price_per_unit: price,
+            supplier,
+            mfg_date: mfg,
+            expiry_date: exp,
+            image_url: img,
+            initial_movement: true,
+            created_by: AppState.settings.userName
+          }, AppState.settings.googleApiUrl);
+        } catch (apiErr) {
+          console.warn('Google Sheet add product error:', apiErr);
+          showToast('บันทึกลงเครื่องแล้ว (ส่งไปยัง Google Sheet ไม่สำเร็จ: ' + apiErr.message + ')', 'info');
+        }
+      }
+
+      showToast(`เพิ่มสินค้า "${name}" และบันทึกยอดรับเข้าเรียบร้อยแล้ว`);
+      switchTab('overview');
       return;
     }
 
-    const pid=document.getElementById('mvProd').value;
-    const p=DB.products.find(x=>x.id===pid);
-    if(!p){ alert('ไม่พบสินค้า'); return; }
-    if(qty>p.current){ alert('จำนวนที่เบิกมากกว่ายอดคงเหลือในระบบ'); return; }
-    const result=await postGoogleData({
-        type: 'addMovement',
-        product_id: pid,
-        movement_type: 'OUT',
-        qty,
-        reason: 'เบิกสินค้า',
-        note: note || 'เบิกจ่ายสินค้า',
-        created_by: 'web_user'
-      },'บันทึกรายการเบิกสินค้าไม่สำเร็จ');
-    if(!result) return;
-    await hydrateFromGoogleIfAvailable();
-    showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
-    return;
-  }
+    // Existing product movement (OUT or IN)
+    const pid = document.getElementById('moveProdSelect').value;
+    const p = AppState.db.products.find(x => x.id === pid);
+    if (!p) {
+      showToast('ไม่พบรายการสินค้า', 'error');
+      if (btn) btn.disabled = false;
+      return;
+    }
 
-  if(type==='in'){
-    const name=document.getElementById('mvProdNew').value.trim();
-    const unit=document.getElementById('mvNewUnit').value.trim();
-    if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
-    const img=document.getElementById('mvImgBox').dataset.data||'';
-    const mfg=document.getElementById('mvDateStart').value||'';
-    const expiry=document.getElementById('mvDateEnd').value||'';
-    const price=parseFloat(document.getElementById('mvPrice').value||'0');
-    const id='p'+Date.now();
-    DB.products.push({id,name,unit,initial:qty,current:qty,img,mfg,expiry,price});
-    DB.tx.push({id:'t'+Date.now(),pid:id,type:'in',qty,note:note||'รับสินค้าใหม่เข้าคลัง',ts:Date.now()});
-  } else {
-    const pid=document.getElementById('mvProd').value;
-    const p=DB.products.find(x=>x.id===pid);
-    if(!p){ alert('ไม่พบสินค้า'); return; }
-    if(qty>p.current){ alert('จำนวนที่เบิกมากกว่ายอดคงเหลือในระบบ'); return; }
-    p.current-=qty;
-    DB.tx.push({id:'t'+Date.now(),pid,type:'out',qty,note:note||'เบิกจ่ายสินค้า',ts:Date.now()});
-  }
-  saveData(DB); render();
-  showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
-}
+    if (moveMode === 'out' && qty > Number(p.current || 0)) {
+      showToast(`ยอดคงเหลือไม่พอสำหรับการเบิกจ่าย (คงเหลือ ${p.current} ${p.unit})`, 'error');
+      if (btn) btn.disabled = false;
+      return;
+    }
 
-function renderManage(){
-  const q=document.getElementById('searchInput').value.trim().toLowerCase();
-  const list=DB.products.filter(p=>p.name.toLowerCase().includes(q));
-  return `
-  <div class="manage-grid">
-    <div class="card">
-      <div class="section-title">จัดการรายการสินค้า</div>
-      <div class="section-sub">แก้ไขข้อมูล ปรับจำนวนคงเหลือ หรือนำรายการสินค้าที่ไม่ใช้งานออกจากระบบ</div>
-      <table><thead><tr><th>ชื่อสินค้า</th><th>หน่วย</th><th>ตั้งต้น</th><th>คงเหลือ</th><th>ราคา/หน่วย</th><th>จัดการ</th></tr></thead><tbody id="manageBody">
-      ${list.map(p=>{const s=statusOf(p);return `<tr data-id="${p.id}"><td>${p.name}${expiryTag(p)}</td><td>${p.unit}</td><td>${fmt(p.initial)}</td><td style="${p.current<=5?'color:var(--red);font-weight:800':''}">${fmt(p.current)}</td><td>${fmtBaht(p.price)}</td>
-      <td><div class="actions-row"><button class="btn sm ghost" onclick="editProduct('${p.id}')">แก้ไข</button><button class="btn sm ghost" onclick="openAdjust('${p.id}')">ปรับสต๊อก</button><button class="btn sm red" onclick="removeProduct('${p.id}')">ลบ</button></div></td></tr>`}).join('')||`<tr><td colspan=6 class="empty">ไม่พบสินค้า</td></tr>`}
-      </tbody></table>
-    </div>
-    <div class="side-edit" id="sidePanel">
-      <h3>เพิ่มสินค้า</h3>
-      <p>สร้างรายการพัสดุหรืออุปกรณ์สำนักงานใหม่เข้าสู่คลังจัดเก็บ</p>
-      <label>ชื่อสินค้า</label><input type="text" id="npName" placeholder="เช่น เคมีภัณฑ์ปรับปรุงคุณภาพดิน (pH12)" style="margin-bottom:12px">
-      <label>หน่วยนับ</label><input type="text" id="npUnit" placeholder="เช่น กระสอบ, กล่อง, ขวด" style="margin-bottom:12px">
-      <div class="form-grid" style="margin-bottom:12px">
-        <div><label>ยอดตั้งต้น</label><input type="number" id="npQty" value="0"></div>
-        <div><label>ราคา/หน่วย (บาท)</label><input type="number" id="npPrice" value="0"></div>
-      </div>
-      <label>วันหมดอายุ</label><input type="date" id="npExpiry" style="margin-bottom:12px">
-      <label>รูป</label><div class="imgbox" id="npImgBox" onclick="document.getElementById('npFile').click()" style="margin-bottom:16px"><div class="ph">คลิกเพื่อเพิ่มรูป</div></div>
-      <input type="file" id="npFile" accept="image/*" style="display:none">
-      <button class="btn primary" style="width:100%" onclick="addProduct()">+ เพิ่มสินค้า</button>
-      <button class="btn ghost" style="width:100%;margin-top:10px" onclick="resetDemo()">สร้าง Mockup Data</button>
-    </div>
-  </div>`;
-}
-function bindManage(){
-  document.getElementById('npFile').addEventListener('change',e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ document.getElementById('npImgBox').innerHTML=`<img src="${r.result}">`; document.getElementById('npImgBox').dataset.data=r.result; };
-    r.readAsDataURL(f);
-  });
-}
-async function addProduct(){
-  const name=document.getElementById('npName').value.trim();
-  const unit=document.getElementById('npUnit').value.trim();
-  const qty=parseInt(document.getElementById('npQty').value||'0',10);
-  if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
+    const isOut = moveMode === 'out';
+    if (isOut) {
+      p.current = Number(p.current || 0) - qty;
+    } else {
+      p.current = Number(p.current || 0) + qty;
+    }
 
-  if (USE_GOOGLE_SHEET) {
-    const payload = {
-      type: 'addProduct',
-      name,
-      unit,
+    const txId = 'T' + Date.now();
+    AppState.db.tx.push({
+      id: txId,
+      pid,
+      type: isOut ? 'out' : 'in',
       qty,
-      min_stock: 0,
-      price_per_unit: Number(document.getElementById('npPrice').value || 0),
-      category: 'General',
-      supplier: 'Google Sheet',
-      image_url: document.getElementById('npImgBox').dataset.data || '',
-      expiry_date: document.getElementById('npExpiry').value || ''
-    };
-    const result=await postGoogleData(payload,'เพิ่มสินค้าไปยัง Google Sheet ไม่สำเร็จ');
-    if(!result) return;
-    await hydrateFromGoogleIfAvailable();
-    showDoneOverlay('เพิ่มสินค้าเรียบร้อยแล้ว');
-    return;
+      reason: reason || (isOut ? 'เบิกจ่ายสินค้า' : 'รับเข้าเพิ่มเติม'),
+      note,
+      ts: now
+    });
+
+    saveLocalData(AppState.db);
+
+    // Sync to Google Sheets if connected
+    if (isGoogleConfigured()) {
+      try {
+        await window.StockAPI.addMovement({
+          product_id: pid,
+          movement_type: isOut ? 'OUT' : 'IN',
+          qty,
+          reason: reason || (isOut ? 'เบิกจ่ายสินค้า' : 'รับเข้าเพิ่มเติม'),
+          note,
+          created_by: AppState.settings.userName
+        }, AppState.settings.googleApiUrl);
+      } catch (apiErr) {
+        console.warn('Google Sheet movement error:', apiErr);
+        showToast('บันทึกลงเครื่องแล้ว (ส่งไปยัง Google Sheet ไม่สำเร็จ: ' + apiErr.message + ')', 'info');
+      }
+    }
+
+    showToast(`บันทึกรายการ ${isOut ? 'เบิกจ่าย' : 'รับเข้า'} "${p.name}" เรียบร้อยแล้ว`);
+    switchTab('overview');
+  } catch (err) {
+    showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
   }
-
-  const img=document.getElementById('npImgBox').dataset.data||'';
-  const expiry=document.getElementById('npExpiry').value||'';
-  const price=parseFloat(document.getElementById('npPrice').value||'0');
-  const id='p'+Date.now();
-  DB.products.push({id,name,unit,initial:qty,current:qty,img,expiry,price});
-  if(qty>0) DB.tx.push({id:'t'+Date.now(),pid:id,type:'in',qty,note:'เพิ่มสินค้าใหม่เข้าคลังจากหน้าจัดการสต๊อก',ts:Date.now()});
-  saveData(DB); render();
-}
-function removeProduct(id){
-  if(!confirm('ยืนยันการลบรายการสินค้านี้ออกจากระบบ?')) return;
-  DB.products=DB.products.filter(p=>p.id!==id);
-  saveData(DB); render();
-}
-function highlightRow(id){
-  document.querySelectorAll('#manageBody tr').forEach(tr=>tr.classList.toggle('row-editing', tr.dataset.id===id));
-}
-function editProduct(id){
-  const p=DB.products.find(x=>x.id===id); if(!p) return;
-  highlightRow(id);
-  const panel=document.getElementById('sidePanel');
-  panel.innerHTML=`
-    <h3>แก้ไขสินค้า</h3>
-    <p>กำลังแก้ไขข้อมูลรายการนี้ (ไฮไลต์สีเข้มในตาราง)</p>
-    <label>ชื่อสินค้า</label><input type="text" id="edName" value="${p.name}" style="margin-bottom:12px">
-    <label>หน่วยนับ</label><input type="text" id="edUnit" value="${p.unit}" style="margin-bottom:12px">
-    <label>ราคา/หน่วย (บาท)</label><input type="number" id="edPrice" value="${p.price||0}" style="margin-bottom:12px">
-    <div class="form-grid" style="margin-bottom:12px">
-      <div><label>วันที่ผลิต</label><input type="date" id="edMfg" value="${p.mfg||''}"></div>
-      <div><label>วันหมดอายุ</label><input type="date" id="edExpiry" value="${p.expiry||''}"></div>
-    </div>
-    <label>รูปสินค้า</label>
-    <div class="imgbox" id="edImgBox" onclick="document.getElementById('edFile').click()" style="margin-bottom:16px">
-      ${p.img?`<img src="${p.img}">`:'<div class="ph">คลิกเพื่อเพิ่มรูป</div>'}
-    </div>
-    <input type="file" id="edFile" accept="image/*" style="display:none">
-    <button class="btn primary" style="width:100%" onclick="saveEditProduct('${id}')">บันทึกการแก้ไข</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="render()">ยกเลิก</button>
-  `;
-  document.getElementById('edFile').addEventListener('change',e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=()=>{ const box=document.getElementById('edImgBox'); box.innerHTML=`<img src="${r.result}">`; box.dataset.data=r.result; };
-    r.readAsDataURL(f);
-  });
-}
-async function saveEditProduct(id){
-  const p=DB.products.find(x=>x.id===id); if(!p) return;
-  const name=document.getElementById('edName').value.trim();
-  const unit=document.getElementById('edUnit').value.trim();
-  if(!name||!unit){ alert('กรุณาระบุชื่อสินค้าและหน่วยนับ'); return; }
-
-  if (USE_GOOGLE_SHEET) {
-    const payload = {
-      type: 'updateProduct',
-      product_id: id,
-      name,
-      unit,
-      qty: Number(p.current || 0),
-      min_stock: 0,
-      price_per_unit: Number(document.getElementById('edPrice').value || 0),
-      category: 'General',
-      supplier: 'Google Sheet',
-      image_url: document.getElementById('edImgBox').dataset.data || p.img || '',
-      mfg_date: document.getElementById('edMfg').value || '',
-      expiry_date: document.getElementById('edExpiry').value || ''
-    };
-    const result=await postGoogleData(payload,'แก้ไขสินค้าใน Google Sheet ไม่สำเร็จ');
-    if(!result) return;
-    await hydrateFromGoogleIfAvailable();
-    showDoneOverlay('บันทึกการแก้ไขเรียบร้อยแล้ว');
-    return;
-  }
-
-  const mfg=document.getElementById('edMfg').value||'';
-  const expiry=document.getElementById('edExpiry').value||'';
-  const price=parseFloat(document.getElementById('edPrice').value||'0');
-  const newImg=document.getElementById('edImgBox').dataset.data;
-  p.name=name; p.unit=unit; p.mfg=mfg; p.expiry=expiry; p.price=price;
-  if(newImg) p.img=newImg;
-  saveData(DB); render();
-}
-function openAdjust(id){
-  const p=DB.products.find(x=>x.id===id); if(!p) return;
-  highlightRow(id);
-  const panel=document.getElementById('sidePanel');
-  panel.innerHTML=`
-    <h3>ปรับยอดสต๊อก</h3>
-    <p>${p.name}</p>
-    <div class="stock-box"><span>ยอดสินค้าเดิม</span><span class="old-val">${fmt(p.current)} ${p.unit}</span></div>
-    <label>เพิ่มยอดใหม่ (บวกเข้ากับยอดเดิม ใส่ค่าติดลบเพื่อลด)</label>
-    <input type="number" id="adjQty" value="0" style="margin-bottom:16px">
-    <button class="btn primary" style="width:100%" onclick="applyAdjust('${id}')">บันทึกยอดใหม่</button>
-    <button class="btn ghost" style="width:100%;margin-top:10px" onclick="render()">ยกเลิก</button>
-  `;
-}
-function applyAdjust(id){
-  const p=DB.products.find(x=>x.id===id); if(!p) return;
-  const delta=parseInt(document.getElementById('adjQty').value||'0',10);
-  const nv=p.current+delta;
-  if(nv<0){ alert('ยอดสินค้ารวมต้องไม่ติดลบ'); return; }
-  p.current=nv;
-  DB.tx.push({id:'t'+Date.now(),pid:id,type:delta>=0?'in':'out',qty:Math.abs(delta),note:'ปรับยอดจากการตรวจนับสต๊อก',ts:Date.now()});
-  saveData(DB); render();
 }
 
-function renderHistory(){
-  const q=document.getElementById('searchInput').value.trim().toLowerCase();
-  const rows=[...DB.tx].sort((a,b)=>b.ts-a.ts).filter(t=>{const p=DB.products.find(x=>x.id===t.pid); return p&&p.name.toLowerCase().includes(q);});
-  return `
-  <div class="card">
-    <div class="section-title">ประวัติรายการ</div>
-    <div class="section-sub">แสดงความเคลื่อนไหวทั้งหมดของสินค้า ทั้งรายการรับเข้าและเบิกจ่าย</div>
-    <table><thead><tr><th>วันที่</th><th>ชื่อสินค้า</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th></tr></thead><tbody>
-    ${rows.map(t=>{const p=DB.products.find(x=>x.id===t.pid); if(!p)return'';return `
-      <tr><td>${dateStr(t.ts)}</td><td>${p.name}</td><td><span class="pill ${t.type==='in'?'ok':'out'}">${t.type==='in'?'รับเข้า':'เบิกจ่าย'}</span></td><td>${t.type==='in'?'+':'-'}${fmt(t.qty)} ${p.unit}</td><td>${t.note||'-'}</td></tr>`}).join('')||`<tr><td colspan=5 class="empty">ไม่พบประวัติรายการ</td></tr>`}
-    </tbody></table>
-  </div>`;
-}
+/* =====================================================================
+   TAB 3: Manage Products (จัดการสต๊อก)
+   ===================================================================== */
+function renderManageTab(container) {
+  const q = AppState.searchQuery;
+  const list = AppState.db.products.filter(p => !q || p.name.toLowerCase().includes(q) || (p.id && p.id.toLowerCase().includes(q)));
 
-let dashMode='month', dashFilter='out';
-const CHART_COLORS=['#1f6b3f','#2f7d46','#4a9563','#6b8a2f','#8a5a2f','#3f8a5b','#2f6b52','#9a7d1f','#5c7566','#b23a3a'];
-function pieChartSVG(){
-  const data=DB.products.map(p=>({name:p.name,val:p.current,unit:p.unit}));
-  const total=data.reduce((s,d)=>s+d.val,0);
-  if(total<=0) return `<div class="empty">ยังไม่มีสินค้าคงเหลือให้แสดงผล</div>`;
-  const cx=110,cy=110,r=95;
-  let cum=-Math.PI/2, slices='';
-  data.forEach((d,i)=>{
-    if(d.val<=0) return;
-    const angle=(d.val/total)*Math.PI*2, end=cum+angle;
-    const x1=cx+r*Math.cos(cum), y1=cy+r*Math.sin(cum);
-    const x2=cx+r*Math.cos(end), y2=cy+r*Math.sin(end);
-    const large=angle>Math.PI?1:0;
-    slices+=`<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${CHART_COLORS[i%CHART_COLORS.length]}" stroke="var(--card)" stroke-width="2"></path>`;
-    cum=end;
-  });
-  const legend=data.map((d,i)=>{
-    if(d.val<=0) return '';
-    const pct=Math.round((d.val/total)*100);
-    return `<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:8px">
-      <span style="width:10px;height:10px;border-radius:3px;background:${CHART_COLORS[i%CHART_COLORS.length]};flex-shrink:0"></span>
-      <span style="flex:1">${d.name}</span><b>${fmt(d.val)} ${d.unit}</b>
-      <span style="color:var(--sub);width:38px;text-align:right">${pct}%</span></div>`;
-  }).join('');
-  return `<div style="display:flex;gap:26px;align-items:center;flex-wrap:wrap">
-    <svg viewBox="0 0 220 220" width="220" height="220">${slices}
-      <circle cx="110" cy="110" r="55" fill="var(--card)"></circle>
-      <text x="110" y="104" text-anchor="middle" font-size="12" fill="var(--sub)">คงเหลือรวม</text>
-      <text x="110" y="124" text-anchor="middle" font-size="18" font-weight="800" fill="var(--green-dk)">${fmt(total)}</text>
-    </svg>
-    <div style="flex:1;min-width:220px">${legend}</div>
-  </div>`;
-}
-function barCompareSVG(){
-  const data=DB.products.map(p=>{
-    const sold=DB.tx.filter(t=>t.pid===p.id&&t.type==='out').reduce((s,t)=>s+t.qty,0);
-    return {name:p.name,total:p.initial,sold};
-  });
-  if(!data.length) return `<div class="empty">ยังไม่มีข้อมูลสินค้า</div>`;
-  const maxV=Math.max(1,...data.map(d=>Math.max(d.total,d.sold)));
-  const barW=26,gap=20,groupW=barW*2+6,leftPad=10,chartH=180,topPad=26,botPad=40;
-  const width=leftPad+data.length*(groupW+gap);
-  let bars='';
-  data.forEach((d,i)=>{
-    const gx=leftPad+i*(groupW+gap);
-    const h1=Math.round((d.total/maxV)*chartH), h2=Math.round((d.sold/maxV)*chartH);
-    const y1=topPad+chartH-h1, y2=topPad+chartH-h2;
-    const label=d.name.length>11?d.name.slice(0,10)+'…':d.name;
-    bars+=`<rect x="${gx}" y="${y1}" width="${barW}" height="${h1}" fill="var(--green)" rx="4"></rect>`;
-    bars+=`<rect x="${gx+barW+6}" y="${y2}" width="${barW}" height="${h2}" fill="var(--red)" rx="4"></rect>`;
-    bars+=`<text x="${gx+barW/2}" y="${y1-5}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--green-dk)">${fmt(d.total)}</text>`;
-    bars+=`<text x="${gx+barW+6+barW/2}" y="${y2-5}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--red)">${fmt(d.sold)}</text>`;
-    bars+=`<text x="${gx+barW}" y="${topPad+chartH+16}" text-anchor="middle" font-size="10" fill="var(--sub)">${label}</text>`;
-  });
-  return `<div style="overflow-x:auto">
-    <svg viewBox="0 0 ${width} ${topPad+chartH+botPad}" width="${width}" height="${topPad+chartH+botPad}" style="min-width:${Math.max(width,320)}px">
-      <line x1="0" y1="${topPad+chartH}" x2="${width}" y2="${topPad+chartH}" stroke="var(--line)"></line>
-      ${bars}
-    </svg></div>
-  <div style="display:flex;gap:18px;margin-top:6px;font-size:12px;color:var(--sub);flex-wrap:wrap">
-    <span><span style="display:inline-block;width:10px;height:10px;background:var(--green);border-radius:3px;margin-right:5px"></span>จำนวนทั้งหมด (ยอดตั้งต้น)</span>
-    <span><span style="display:inline-block;width:10px;height:10px;background:var(--red);border-radius:3px;margin-right:5px"></span>จำนวนที่ขายออก (เบิกจ่ายสะสม)</span>
-  </div>`;
-}
-function setDashFilter(f){ dashFilter=f; renderDash2(); }
-function renderDash(){
-  return `<div id="dashBody"></div>`;
-}
-function bindDash(){
-  renderDash2();
-}
-function renderDash2(){
-  const body=document.getElementById('dashBody');
-  const totalIn=DB.tx.filter(t=>t.type==='in').reduce((s,t)=>s+t.qty,0);
-  const totalOut=DB.tx.filter(t=>t.type==='out').reduce((s,t)=>s+t.qty,0);
-  const totalInit=DB.products.reduce((s,p)=>s+p.initial,0)||1;
-  const totalCur=DB.products.reduce((s,p)=>s+p.current,0);
-  const soldPct=Math.min(100,Math.round((totalOut/(totalInit))*100));
-  const growth=totalIn-totalOut;
-  const moveTotal=totalIn+totalOut||1;
-  const inPct=Math.round((totalIn/moveTotal)*100);
-  const outPct=100-inPct;
-  const netPct=totalIn>0?Math.round((growth/totalIn)*100):0;
-  const perProd=DB.products.map(p=>{
-    const inQ=DB.tx.filter(t=>t.pid===p.id&&t.type==='in').reduce((s,t)=>s+t.qty,0);
-    const outQ=DB.tx.filter(t=>t.pid===p.id&&t.type==='out').reduce((s,t)=>s+t.qty,0);
-    const pct=p.initial>0?Math.round((outQ/p.initial)*100):0;
-    return {p,inQ,outQ,net:inQ-outQ,pct};
-  });
-  const metricCfg={
-    in:{title:'สินค้าที่รับเข้ามากที่สุด',sub:'อ้างอิงจากยอดรับเข้าสะสมในระบบ',col:'รับเข้าสะสม',sort:(a,b)=>b.inQ-a.inQ,val:x=>`${fmt(x.inQ)} ${x.p.unit}`},
-    out:{title:'สินค้าที่เบิกใช้มากที่สุด',sub:'อ้างอิงจากยอดเบิกจ่ายสะสมในระบบ',col:'เบิกจ่ายสะสม',sort:(a,b)=>b.outQ-a.outQ,val:x=>`${fmt(x.outQ)} ${x.p.unit}`},
-    pct:{title:'สินค้าที่เบิกใช้เป็น % สูงสุด',sub:'เทียบกับยอดตั้งต้นของสินค้าแต่ละตัว',col:'% เบิกใช้',sort:(a,b)=>b.pct-a.pct,val:x=>`${x.pct}%`},
-    net:{title:'สินค้าที่ยอดสุทธิเปลี่ยนแปลงมากที่สุด',sub:'รับเข้า − เบิกจ่าย ของสินค้าแต่ละตัว',col:'ยอดสุทธิ',sort:(a,b)=>Math.abs(b.net)-Math.abs(a.net),val:x=>`${x.net>=0?'+':''}${fmt(x.net)}`},
-  };
-  const mc=metricCfg[dashFilter];
-  body.innerHTML=`
-    <div class="kpi-row">
-      <div class="stat ${dashFilter==='in'?'on':''}" onclick="setDashFilter('in')"><div class="lbl">รายการรับเข้า</div><div class="num">${fmt(totalIn)} <span style="font-size:14px;color:var(--green)">(${inPct}%)</span></div><div class="sub">หน่วยสะสมทั้งหมด · ${inPct}% ของยอดเคลื่อนไหวรวม</div></div>
-      <div class="stat ${dashFilter==='out'?'on':''}" onclick="setDashFilter('out')"><div class="lbl">รายการเบิกจ่าย</div><div class="num">${fmt(totalOut)} <span style="font-size:14px;color:var(--red)">(${outPct}%)</span></div><div class="sub">หน่วยสะสมทั้งหมด · ${outPct}% ของยอดเคลื่อนไหวรวม</div></div>
-      <div class="stat ${dashFilter==='pct'?'on':''}" onclick="setDashFilter('pct')"><div class="lbl">สินค้าเบิกใช้ %</div><div class="num">${fmt(totalOut)} <span style="font-size:14px;color:var(--green-dk)">(${soldPct}%)</span></div><div class="sub">เทียบกับยอดตั้งต้นรวม ${fmt(totalInit)} หน่วย</div></div>
-      <div class="stat ${dashFilter==='net'?'on':''}" onclick="setDashFilter('net')"><div class="lbl">ยอดสุทธิเปลี่ยนแปลง</div><div class="num" style="color:${growth>=0?'var(--green)':'var(--red)'}">${growth>=0?'+':''}${fmt(growth)} <span style="font-size:14px">(${netPct>=0?'+':''}${netPct}%)</span></div><div class="sub">รับเข้า−เบิกจ่าย · เทียบกับยอดรับเข้า</div></div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title">สัดส่วนสินค้าคงเหลือ</div>
-      <div class="section-sub">จำนวนสินค้าทั้งหมดในคลัง แยกย่อยเป็นสัดส่วนของแต่ละรายการ</div>
-      ${pieChartSVG()}
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title">จำนวนทั้งหมด vs จำนวนที่ขายออก (รายสินค้า)</div>
-      <div class="section-sub">เปรียบเทียบยอดตั้งต้นกับยอดที่เบิกจ่ายออกไปแล้วของสินค้าแต่ละตัว</div>
-      ${barCompareSVG()}
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="section-title">สินค้าใกล้หมดอายุ</div>
-      <div class="section-sub">เรียงลำดับจากวันหมดอายุใกล้ที่สุดไปไกลที่สุด</div>
-      <table><thead><tr><th>ชื่อสินค้า</th><th>คงเหลือ</th><th>วันหมดอายุ</th><th>สถานะ</th></tr></thead><tbody>
-      ${DB.products.filter(p=>p.expiry).sort((a,b)=>new Date(a.expiry)-new Date(b.expiry)).map(p=>{const m=monthsUntil(p.expiry);const warn=m<=3;return `<tr><td>${p.name}</td><td>${fmt(p.current)} ${p.unit}</td><td>${p.expiry}</td><td>${warn?`<span class="pill ${m<0?'out':'low'}">${m<0?`หมดอายุแล้ว ${Math.abs(m)} ด.`:`เหลือ ${m} เดือน`}</span>`:`<span class="pill ok">ยังไม่ใกล้หมดอายุ</span>`}</td></tr>`}).join('')||`<tr><td colspan=4 class="empty">ไม่มีข้อมูลวันหมดอายุ</td></tr>`}
-      </tbody></table>
-    </div>
+  container.innerHTML = `
     <div class="card">
-      <div class="section-title">${mc.title}</div>
-      <div class="section-sub">${mc.sub} · <a href="#" onclick="setDashFilter('out');return false;" style="color:var(--green-dk);font-weight:700">${dashFilter!=='out'?'กลับเป็นค่าเริ่มต้น':''}</a></div>
-      <table><thead><tr><th>ชื่อสินค้า</th><th>${mc.col}</th><th>คงเหลือ</th></tr></thead><tbody>
-      ${[...perProd].sort(mc.sort).slice(0,6).map(x=>`<tr><td>${x.p.name}</td><td>${mc.val(x)}</td><td>${fmt(x.p.current)}</td></tr>`).join('')}
-      </tbody></table>
-    </div>`;
+      <div class="card-title-row">
+        <div>
+          <div class="section-title">📦 จัดการรายการสินค้าคงคลัง</div>
+          <div class="section-sub">แก้ไขข้อมูล ปรับยอดสต๊อกจากการตรวจนับจริง หรือลบรายการที่ไม่ใช้งาน</div>
+        </div>
+        <button class="btn primary" onclick="openAddProductModal()">+ เพิ่มสินค้าใหม่</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>สินค้า / รหัส</th>
+              <th>หมวดหมู่</th>
+              <th>หน่วยนับ</th>
+              <th>คงเหลือ</th>
+              <th>ขั้นต่ำ</th>
+              <th>ราคา/หน่วย</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.length > 0 ? list.map(p => {
+              const s = getProductStatus(p);
+              const thumb = p.img || generateDefaultThumb(p.name);
+              return `
+                <tr>
+                  <td>
+                    <div class="prod-cell">
+                      <img src="${thumb}" class="prod-thumb" alt="${p.name}">
+                      <div>
+                        <div class="prod-info-name">${p.name}</div>
+                        <div class="prod-info-meta">SKU: ${p.id} ${p.supplier ? `· ${p.supplier}` : ''}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span class="badge">${p.category || 'ทั่วไป'}</span></td>
+                  <td>${p.unit}</td>
+                  <td><b style="font-size:15px;color:${s.c === 'out' ? 'var(--red)' : (s.c === 'low' ? 'var(--amber)' : 'var(--text-main)')}">${fmt(p.current)}</b></td>
+                  <td>${fmt(p.min_stock || 5)}</td>
+                  <td>${fmtBaht(p.price)}</td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn sm ghost" onclick="openEditProductModal('${p.id}')">✏️ แก้ไข</button>
+                      <button class="btn sm ghost" onclick="openAdjustStockModal('${p.id}')">⚖️ ปรับสต๊อก</button>
+                      <button class="btn sm red" onclick="confirmDeleteProduct('${p.id}')">🗑</button>
+                    </div>
+                  </td>
+                </tr>
+              `;
+            }).join('') : `
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <div class="empty-icon">📦</div>
+                  <div>ไม่พบรายการสินค้า</div>
+                </td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
-render();
+function openAddProductModal() {
+  const body = `
+    <form id="modalAddProdForm" onsubmit="handleModalAddProduct(event)">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ชื่อสินค้า <span style="color:var(--red)">*</span></label>
+          <input type="text" id="mAddName" required placeholder="เช่น ปุ๋ยเคมี สูตร 15-15-15">
+        </div>
+        <div class="form-group">
+          <label>หมวดหมู่</label>
+          <input type="text" id="mAddCat" placeholder="เช่น ปุ๋ย, เคมีภัณฑ์, วัสดุสิ้นเปลือง">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>หน่วยนับ <span style="color:var(--red)">*</span></label>
+          <input type="text" id="mAddUnit" required placeholder="เช่น กระสอบ, ขวด, กล่อง">
+        </div>
+        <div class="form-group">
+          <label>จำนวนสต๊อกเริ่มต้น</label>
+          <input type="number" id="mAddQty" min="0" value="0">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ราคาต่อหน่วย (บาท)</label>
+          <input type="number" id="mAddPrice" min="0" step="any" value="0">
+        </div>
+        <div class="form-group">
+          <label>แจ้งเตือนเมื่อเหลือน้อยกว่า (ชิ้น)</label>
+          <input type="number" id="mAddMinStock" min="0" value="5">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>วันที่ผลิต (MFG)</label>
+          <input type="date" id="mAddMfg">
+        </div>
+        <div class="form-group">
+          <label>วันหมดอายุ (EXP)</label>
+          <input type="date" id="mAddExp">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>ซัพพลายเออร์ / ร้านค้า</label>
+        <input type="text" id="mAddSupplier" placeholder="ชื่อผู้จัดจำหน่าย">
+      </div>
+      <div class="form-group">
+        <label>รูปภาพสินค้า</label>
+        <div class="img-upload-box" id="mAddImgBox" onclick="document.getElementById('mAddImgFile').click()">
+          <div class="upload-hint">📷 คลิกเพื่อเลือกรูปภาพ</div>
+        </div>
+        <input type="file" id="mAddImgFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'mAddImgBox')">
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button type="button" class="btn ghost" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn primary">บันทึกสินค้าใหม่</button>
+      </div>
+    </form>
+  `;
+  openModal('✨ เพิ่มสินค้าใหม่เข้าคลัง', body);
+}
+
+async function handleModalAddProduct(e) {
+  e.preventDefault();
+  const name = document.getElementById('mAddName').value.trim();
+  const unit = document.getElementById('mAddUnit').value.trim();
+  const cat = document.getElementById('mAddCat').value.trim() || 'ทั่วไป';
+  const qty = Number(document.getElementById('mAddQty').value) || 0;
+  const price = Number(document.getElementById('mAddPrice').value) || 0;
+  const minStock = Number(document.getElementById('mAddMinStock').value) || 5;
+  const mfg = document.getElementById('mAddMfg').value;
+  const exp = document.getElementById('mAddExp').value;
+  const supplier = document.getElementById('mAddSupplier').value.trim();
+  const img = document.getElementById('mAddImgBox').dataset.imgData || '';
+
+  if (!name || !unit) {
+    showToast('กรุณาระบุชื่อสินค้าและหน่วยนับ', 'error');
+    return;
+  }
+
+  const pid = 'P' + Date.now();
+  const newProduct = {
+    id: pid,
+    name,
+    category: cat,
+    unit,
+    initial: qty,
+    current: qty,
+    min_stock: minStock,
+    price,
+    supplier,
+    mfg,
+    expiry: exp,
+    img
+  };
+
+  AppState.db.products.push(newProduct);
+  if (qty > 0) {
+    AppState.db.tx.push({
+      id: 'T' + Date.now(),
+      pid,
+      type: 'in',
+      qty,
+      reason: 'ยอดยกมาเริ่มต้น',
+      note: 'เพิ่มสินค้าจากหน้าจัดการสต๊อก',
+      ts: Date.now()
+    });
+  }
+
+  saveLocalData(AppState.db);
+  closeModal();
+
+  if (isGoogleConfigured()) {
+    try {
+      await window.StockAPI.addProduct({
+        product_id: pid,
+        name,
+        category: cat,
+        unit,
+        qty,
+        min_stock: minStock,
+        price_per_unit: price,
+        supplier,
+        mfg_date: mfg,
+        expiry_date: exp,
+        image_url: img,
+        initial_movement: qty > 0,
+        created_by: AppState.settings.userName
+      }, AppState.settings.googleApiUrl);
+    } catch (err) {
+      showToast('บันทึกลงเครื่องแล้ว (Google Sheet ล้มเหลว: ' + err.message + ')', 'info');
+    }
+  }
+
+  showToast(`เพิ่มสินค้า "${name}" เรียบร้อยแล้ว`);
+  renderCurrentTab();
+}
+
+function openEditProductModal(id) {
+  const p = AppState.db.products.find(x => x.id === id);
+  if (!p) return;
+
+  const body = `
+    <form id="modalEditProdForm" onsubmit="handleModalEditProduct(event, '${id}')">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>ชื่อสินค้า <span style="color:var(--red)">*</span></label>
+          <input type="text" id="mEditName" value="${p.name}" required>
+        </div>
+        <div class="form-group">
+          <label>หมวดหมู่</label>
+          <input type="text" id="mEditCat" value="${p.category || 'ทั่วไป'}">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>หน่วยนับ <span style="color:var(--red)">*</span></label>
+          <input type="text" id="mEditUnit" value="${p.unit}" required>
+        </div>
+        <div class="form-group">
+          <label>ราคาต่อหน่วย (บาท)</label>
+          <input type="number" id="mEditPrice" value="${p.price || 0}" step="any">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>แจ้งเตือนเมื่อเหลือน้อยกว่า (ชิ้น)</label>
+          <input type="number" id="mEditMinStock" value="${p.min_stock || 5}">
+        </div>
+        <div class="form-group">
+          <label>ซัพพลายเออร์</label>
+          <input type="text" id="mEditSupplier" value="${p.supplier || ''}">
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>วันที่ผลิต (MFG)</label>
+          <input type="date" id="mEditMfg" value="${p.mfg || ''}">
+        </div>
+        <div class="form-group">
+          <label>วันหมดอายุ (EXP)</label>
+          <input type="date" id="mEditExp" value="${p.expiry || ''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>รูปภาพสินค้า</label>
+        <div class="img-upload-box" id="mEditImgBox" onclick="document.getElementById('mEditImgFile').click()">
+          ${p.img ? `<img src="${p.img}" alt="${p.name}">` : '<div class="upload-hint">📷 คลิกเพื่อเปลี่ยนรูปภาพ</div>'}
+        </div>
+        <input type="file" id="mEditImgFile" accept="image/*" style="display:none" onchange="handleImageUpload(event, 'mEditImgBox')">
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button type="button" class="btn ghost" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn primary">บันทึกการแก้ไข</button>
+      </div>
+    </form>
+  `;
+  openModal(`✏️ แก้ไขข้อมูล: ${p.name}`, body);
+}
+
+async function handleModalEditProduct(e, id) {
+  e.preventDefault();
+  const p = AppState.db.products.find(x => x.id === id);
+  if (!p) return;
+
+  p.name = document.getElementById('mEditName').value.trim();
+  p.category = document.getElementById('mEditCat').value.trim() || 'ทั่วไป';
+  p.unit = document.getElementById('mEditUnit').value.trim();
+  p.price = Number(document.getElementById('mEditPrice').value) || 0;
+  p.min_stock = Number(document.getElementById('mEditMinStock').value) || 5;
+  p.supplier = document.getElementById('mEditSupplier').value.trim();
+  p.mfg = document.getElementById('mEditMfg').value;
+  p.expiry = document.getElementById('mEditExp').value;
+
+  const newImg = document.getElementById('mEditImgBox').dataset.imgData;
+  if (newImg) p.img = newImg;
+
+  saveLocalData(AppState.db);
+  closeModal();
+
+  if (isGoogleConfigured()) {
+    try {
+      await window.StockAPI.updateProduct({
+        product_id: id,
+        name: p.name,
+        category: p.category,
+        unit: p.unit,
+        price_per_unit: p.price,
+        min_stock: p.min_stock,
+        supplier: p.supplier,
+        mfg_date: p.mfg,
+        expiry_date: p.expiry,
+        image_url: p.img,
+        qty: p.current
+      }, AppState.settings.googleApiUrl);
+    } catch (err) {
+      showToast('บันทึกลงเครื่องแล้ว (Google Sheet ล้มเหลว: ' + err.message + ')', 'info');
+    }
+  }
+
+  showToast('แก้ไขข้อมูลสินค้าสำเร็จแล้ว');
+  renderCurrentTab();
+}
+
+function openAdjustStockModal(id) {
+  const p = AppState.db.products.find(x => x.id === id);
+  if (!p) return;
+
+  const body = `
+    <form id="modalAdjustForm" onsubmit="handleModalAdjustStock(event, '${id}')">
+      <div style="background:var(--bg-subtle);padding:14px;border-radius:var(--radius-sm);margin-bottom:16px">
+        <div style="font-size:12.5px;color:var(--text-muted)">ยอดคงเหลือในระบบปัจจุบัน</div>
+        <div style="font-size:22px;font-weight:800;color:var(--text-main)">${fmt(p.current)} ${p.unit}</div>
+      </div>
+      <div class="form-group">
+        <label>ปรับยอดสต๊อกใหม่ (ใส่ค่าจำนวนที่ต้องการเพิ่ม หรือใส่ติดลบเพื่อลดยอด)</label>
+        <input type="number" id="mAdjDelta" placeholder="เช่น +10 หรือ -5" required>
+      </div>
+      <div class="form-group">
+        <label>เหตุผลในการปรับปรุงยอดสต๊อก</label>
+        <input type="text" id="mAdjReason" placeholder="เช่น ตรวจนับสต๊อกสิ้นเดือน, สินค้าชำรุด, สินค้าสูญหาย">
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">
+        <button type="button" class="btn ghost" onclick="closeModal()">ยกเลิก</button>
+        <button type="submit" class="btn primary">ยืนยันปรับยอด</button>
+      </div>
+    </form>
+  `;
+  openModal(`⚖️ ปรับปรุงยอดสต๊อก: ${p.name}`, body);
+}
+
+async function handleModalAdjustStock(e, id) {
+  e.preventDefault();
+  const p = AppState.db.products.find(x => x.id === id);
+  if (!p) return;
+
+  const delta = Number(document.getElementById('mAdjDelta').value) || 0;
+  const reason = document.getElementById('mAdjReason').value.trim() || 'ตรวจนับสต๊อก';
+
+  if (delta === 0) {
+    showToast('กรุณาระบุจำนวนที่ต้องการปรับปรุง', 'error');
+    return;
+  }
+
+  const newQty = Number(p.current || 0) + delta;
+  if (newQty < 0) {
+    showToast('ยอดสต๊อกรวมต้องไม่ติดลบ', 'error');
+    return;
+  }
+
+  p.current = newQty;
+  AppState.db.tx.push({
+    id: 'T' + Date.now(),
+    pid: id,
+    type: 'adjust',
+    qty: Math.abs(delta),
+    reason: 'ปรับยอดตรวจนับ',
+    note: reason + ` (${delta > 0 ? '+' : ''}${delta} ${p.unit})`,
+    ts: Date.now()
+  });
+
+  saveLocalData(AppState.db);
+  closeModal();
+
+  if (isGoogleConfigured()) {
+    try {
+      await window.StockAPI.adjustStock(id, delta, reason, AppState.settings.googleApiUrl);
+    } catch (err) {
+      showToast('ปรับยอดในเครื่องแล้ว (Google Sheet ล้มเหลว: ' + err.message + ')', 'info');
+    }
+  }
+
+  showToast(`ปรับยอด "${p.name}" เป็น ${fmt(newQty)} ${p.unit} เรียบร้อยแล้ว`);
+  renderCurrentTab();
+}
+
+function confirmDeleteProduct(id) {
+  const p = AppState.db.products.find(x => x.id === id);
+  if (!p) return;
+
+  const body = `
+    <p style="font-size:14px;color:var(--text-sub);line-height:1.6">
+      คุณแน่ใจหรือไม่ว่าต้องการลบรายการสินค้า <b>"${p.name}" (SKU: ${p.id})</b> ออกจากระบบ?<br>
+      <span style="color:var(--red);font-size:12.5px">⚠️ การดำเนินการนี้ไม่สามารถย้อนกลับได้</span>
+    </p>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
+      <button class="btn ghost" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn red" onclick="executeDeleteProduct('${id}')">ยืนยันการลบ</button>
+    </div>
+  `;
+  openModal('🗑 ยืนยันการลบสินค้า', body);
+}
+
+async function executeDeleteProduct(id) {
+  AppState.db.products = AppState.db.products.filter(p => p.id !== id);
+  saveLocalData(AppState.db);
+  closeModal();
+
+  if (isGoogleConfigured()) {
+    try {
+      await window.StockAPI.deleteProduct(id, AppState.settings.googleApiUrl);
+    } catch (err) {
+      showToast('ลบในเครื่องแล้ว (Google Sheet ล้มเหลว: ' + err.message + ')', 'info');
+    }
+  }
+
+  showToast('ลบรายการสินค้าเรียบร้อยแล้ว');
+  renderCurrentTab();
+}
+
+/* =====================================================================
+   TAB 4: Movement History (ประวัติรายการ)
+   ===================================================================== */
+let historyTypeFilter = 'all';
+
+function renderHistoryTab(container) {
+  const q = AppState.searchQuery;
+  let rows = [...AppState.db.tx].sort((a, b) => b.ts - a.ts);
+
+  if (historyTypeFilter !== 'all') {
+    rows = rows.filter(r => r.type === historyTypeFilter);
+  }
+
+  if (q) {
+    rows = rows.filter(r => {
+      const p = AppState.db.products.find(x => x.id === r.pid);
+      const pName = p ? p.name.toLowerCase() : '';
+      const rNote = (r.note || '').toLowerCase();
+      const rReason = (r.reason || '').toLowerCase();
+      return pName.includes(q) || rNote.includes(q) || rReason.includes(q);
+    });
+  }
+
+  container.innerHTML = `
+    <div class="card">
+      <div class="card-title-row">
+        <div>
+          <div class="section-title">📜 ประวัติความเคลื่อนไหวสินค้า</div>
+          <div class="section-sub">บันทึกประวัติการรับเข้า เบิกจ่าย และปรับปรุงยอดทั้งหมด</div>
+        </div>
+        <div class="btn-group">
+          <button class="btn sm ghost" onclick="exportHistoryCSV()">📥 ดาวน์โหลด CSV</button>
+        </div>
+      </div>
+
+      <!-- Filter tabs -->
+      <div class="filter-pills">
+        <span class="filter-pill ${historyTypeFilter === 'all' ? 'active' : ''}" onclick="setHistoryFilter('all')">ทั้งหมด</span>
+        <span class="filter-pill ${historyTypeFilter === 'in' ? 'active' : ''}" onclick="setHistoryFilter('in')">📥 รับเข้า</span>
+        <span class="filter-pill ${historyTypeFilter === 'out' ? 'active' : ''}" onclick="setHistoryFilter('out')">📤 เบิกจ่าย</span>
+        <span class="filter-pill ${historyTypeFilter === 'adjust' ? 'active' : ''}" onclick="setHistoryFilter('adjust')">⇄ ปรับปรุงยอด</span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>วัน-เวลา</th>
+              <th>ชื่อสินค้า</th>
+              <th>ประเภท</th>
+              <th>จำนวน</th>
+              <th>เหตุผล</th>
+              <th>หมายเหตุ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.length > 0 ? rows.map(t => {
+              const p = AppState.db.products.find(x => x.id === t.pid);
+              const isOut = t.type === 'out';
+              const isAdj = t.type === 'adjust';
+              const pillClass = isAdj ? 'accent' : (isOut ? 'out' : 'ok');
+              const typeText = isAdj ? 'ปรับสต๊อก' : (isOut ? 'เบิกจ่าย' : 'รับเข้า');
+              const sign = isAdj ? '⇄ ' : (isOut ? '-' : '+');
+
+              return `
+                <tr>
+                  <td style="white-space:nowrap;font-size:12.5px">${formatDate(t.ts)}</td>
+                  <td><b>${p ? p.name : 'สินค้าถูกลบ'}</b></td>
+                  <td><span class="pill ${pillClass}">${typeText}</span></td>
+                  <td><b style="color:${isOut ? 'var(--red)' : (isAdj ? 'var(--accent)' : 'var(--primary)')}">${sign}${fmt(t.qty)} ${p ? p.unit : ''}</b></td>
+                  <td>${t.reason || '-'}</td>
+                  <td style="color:var(--text-sub)">${t.note || '-'}</td>
+                </tr>
+              `;
+            }).join('') : `
+              <tr>
+                <td colspan="6" class="empty-state">
+                  <div class="empty-icon">📜</div>
+                  <div>ไม่พบข้อมูลประวัติความเคลื่อนไหว</div>
+                </td>
+              </tr>
+            `}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function setHistoryFilter(type) {
+  historyTypeFilter = type;
+  renderCurrentTab();
+}
+
+/* =====================================================================
+   TAB 5: Dashboard & Analytics (สถิติ & กราฟ)
+   ===================================================================== */
+function renderDashTab(container) {
+  const prods = AppState.db.products;
+  const moves = AppState.db.tx;
+
+  const totalIn = moves.filter(t => t.type === 'in').reduce((sum, t) => sum + Number(t.qty || 0), 0);
+  const totalOut = moves.filter(t => t.type === 'out').reduce((sum, t) => sum + Number(t.qty || 0), 0);
+  const totalVal = prods.reduce((sum, p) => sum + (Number(p.current || 0) * Number(p.price || 0)), 0);
+
+  // Group by category
+  const catMap = {};
+  prods.forEach(p => {
+    const c = p.category || 'ทั่วไป';
+    catMap[c] = (catMap[c] || 0) + (Number(p.current || 0) * Number(p.price || 0));
+  });
+
+  // Top moved items
+  const topOut = prods.map(p => {
+    const outQty = moves.filter(m => m.pid === p.id && m.type === 'out').reduce((sum, m) => sum + Number(m.qty || 0), 0);
+    return { name: p.name, unit: p.unit, current: p.current, outQty };
+  }).sort((a, b) => b.outQty - a.outQty).slice(0, 5);
+
+  container.innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">รับเข้าสะสมทั้งหมด</div>
+        <div class="kpi-num" style="color:var(--primary)">+${fmt(totalIn)}</div>
+        <div class="kpi-desc">หน่วยรับเข้าจากทุกรายการ</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">เบิกจ่ายสะสมทั้งหมด</div>
+        <div class="kpi-num" style="color:var(--red)">-${fmt(totalOut)}</div>
+        <div class="kpi-desc">หน่วยเบิกจ่ายออกจากคลัง</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">มูลค่าสินค้าในคลังรวม</div>
+        <div class="kpi-num">${fmtBaht(totalVal)}</div>
+        <div class="kpi-desc">คำนวณจากราคาต่อหน่วย x ยอดคงเหลือ</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">อัตราหมุนเวียนสินค้า</div>
+        <div class="kpi-num">${totalIn > 0 ? Math.round((totalOut / totalIn) * 100) : 0}%</div>
+        <div class="kpi-desc">สัดส่วนเบิกจ่ายเทียบกับยอดรับเข้า</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Category Donut Chart -->
+      <div class="card">
+        <div class="section-title">📊 สัดส่วนมูลค่าสินค้าตามหมวดหมู่</div>
+        <div class="section-sub">แยกตามประเภทพัสดุในคลัง (บาท)</div>
+        <div style="margin-top:16px">
+          ${renderDonutChart(catMap, totalVal)}
+        </div>
+      </div>
+
+      <!-- Top Requisitioned Items -->
+      <div class="card">
+        <div class="section-title">🔥 5 อันดับสินค้าที่เบิกใช้มากที่สุด</div>
+        <div class="section-sub">เรียงตามปริมาณเบิกจ่ายสะสม</div>
+        <div style="margin-top:16px">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>สินค้า</th>
+                <th>เบิกใช้สะสม</th>
+                <th>คงเหลือ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topOut.map(x => `
+                <tr>
+                  <td><b>${x.name}</b></td>
+                  <td style="color:var(--red);font-weight:700">-${fmt(x.outQty)} ${x.unit}</td>
+                  <td>${fmt(x.current)} ${x.unit}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDonutChart(catMap, totalVal) {
+  const entries = Object.entries(catMap).filter(([_, val]) => val > 0);
+  if (entries.length === 0 || totalVal <= 0) {
+    return `<div class="empty-state">ยังไม่มีข้อมูลมูลค่าสินค้า</div>`;
+  }
+
+  const colors = ['#047857', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#059669', '#0284c7'];
+  const cx = 90, cy = 90, r = 70;
+  let startAngle = -Math.PI / 2;
+  let paths = '';
+
+  entries.forEach(([cat, val], idx) => {
+    const angle = (val / totalVal) * Math.PI * 2;
+    const endAngle = startAngle + angle;
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const color = colors[idx % colors.length];
+
+    paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${largeArc} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${color}" stroke="var(--bg-card)" stroke-width="2"/>`;
+    startAngle = endAngle;
+  });
+
+  const legend = entries.map(([cat, val], idx) => {
+    const pct = Math.round((val / totalVal) * 100);
+    const color = colors[idx % colors.length];
+    return `
+      <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-bottom:8px">
+        <span style="width:10px;height:10px;border-radius:3px;background:${color};flex-shrink:0"></span>
+        <span style="flex:1">${cat}</span>
+        <b>${fmtBaht(val)}</b>
+        <span style="color:var(--text-muted);width:35px;text-align:right">${pct}%</span>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+      <svg viewBox="0 0 180 180" width="180" height="180">
+        ${paths}
+        <circle cx="90" cy="90" r="42" fill="var(--bg-card)"/>
+        <text x="90" y="86" text-anchor="middle" font-size="10" fill="var(--text-muted)">มูลค่ารวม</text>
+        <text x="90" y="102" text-anchor="middle" font-size="12" font-weight="800" fill="var(--primary)">${fmt(totalVal)}</text>
+      </svg>
+      <div style="flex:1;min-width:200px">
+        ${legend}
+      </div>
+    </div>
+  `;
+}
+
+/* =====================================================================
+   TAB 6: Settings (ตั้งค่า & เชื่อมต่อ)
+   ===================================================================== */
+function renderSettingsTab(container) {
+  const s = AppState.settings;
+
+  container.innerHTML = `
+    <div class="two-col">
+      <!-- Google Sheet Connection Card -->
+      <div class="card">
+        <div class="section-title">☁ การเชื่อมต่อ Google Sheets</div>
+        <div class="section-sub">เชื่อมระบบเข้ากับ Google Spreadsheet เพื่อสำรองข้อมูลและใช้งานร่วมกันหลายคน</div>
+
+        <form id="settingsGoogleForm" onsubmit="handleSaveGoogleUrl(event)" style="margin-top:16px">
+          <div class="form-group">
+            <label>Google Apps Script Web App URL (ลงท้ายด้วย /exec)</label>
+            <input type="url" id="cfgGoogleUrl" value="${s.googleApiUrl || ''}" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+          </div>
+
+          <div style="display:flex;gap:10px;margin-bottom:18px">
+            <button type="submit" class="btn primary" id="btnSaveUrl">💾 บันทึก URL</button>
+            <button type="button" class="btn ghost" onclick="testGoogleConnection()">🧪 ทดสอบการเชื่อมต่อ</button>
+            <button type="button" class="btn ghost" onclick="clearGoogleUrl()">ล้างการเชื่อมต่อ</button>
+          </div>
+
+          <div id="testConnectionResult" style="display:none;padding:12px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:16px"></div>
+        </form>
+
+        <div style="background:var(--bg-subtle);padding:14px;border-radius:var(--radius-sm);font-size:12.5px;color:var(--text-sub);line-height:1.6">
+          <b style="color:var(--text-main)">📌 ขั้นตอนการสร้าง Google Apps Script:</b><br>
+          1. เปิด Google Sheets สร้างชีตใหม่<br>
+          2. ไปที่เมนู <b>ส่วนขยาย (Extensions) > Apps Script</b><br>
+          3. คัดลอกโค้ดจากไฟล์ <code>google-apps-script.gs</code> ในโปรเจกต์นี้ไปวาง<br>
+          4. กด <b>Deploy (ทำให้ใช้งานได้) > New deployment > Web app</b><br>
+          5. เลือก <b>Who has access: Anyone (ทุกคน)</b> แล้วกด Deploy<br>
+          6. นำ Web App URL ที่ได้มาวางในช่องด้านบนนี้
+        </div>
+      </div>
+
+      <!-- Warehouse Profile & Data Card -->
+      <div class="card">
+        <div class="section-title">🏢 ข้อมูลองค์กรและคลังสินค้า</div>
+        <div class="section-sub">กำหนดชื่อคลังสินค้าและชื่อผู้ดูแลระบบ</div>
+
+        <form onsubmit="handleSaveProfile(event)" style="margin-top:16px">
+          <div class="form-group">
+            <label>ชื่อองค์กร / ชื่อหัวระบบ</label>
+            <input type="text" id="cfgCompanyName" value="${s.companyName || ''}">
+          </div>
+          <div class="form-group">
+            <label>ชื่อคลังสินค้า</label>
+            <input type="text" id="cfgWarehouseName" value="${s.warehouseName || ''}">
+          </div>
+          <div class="form-group">
+            <label>ชื่อผู้ดูแลระบบ / ผู้จัดการคลัง</label>
+            <input type="text" id="cfgUserName" value="${s.userName || ''}">
+          </div>
+
+          <button type="submit" class="btn primary" style="width:100%;margin-bottom:20px">💾 บันทึกข้อมูลองค์กร</button>
+        </form>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+
+        <div class="section-title" style="font-size:15px">💾 สำรองและกู้คืนข้อมูล</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+          <button class="btn ghost sm" onclick="exportDataJSON()">📥 ส่งออก JSON</button>
+          <button class="btn ghost sm" onclick="exportDataCSV()">📊 ส่งออก CSV</button>
+          <button class="btn ghost sm" onclick="document.getElementById('importFileInput').click()">📤 นำเข้า JSON</button>
+          <button class="btn red sm" onclick="resetDemoDataConfirm()">⟳ รีเซ็ตข้อมูล</button>
+        </div>
+        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataJSON(event)">
+      </div>
+    </div>
+  `;
+}
+
+async function handleSaveGoogleUrl(e) {
+  e.preventDefault();
+  const url = document.getElementById('cfgGoogleUrl').value.trim();
+  if (url && (url.includes('/macros/library/') || (url.startsWith('https://script.google.com') && !url.includes('/exec')))) {
+    testGoogleConnection();
+    return;
+  }
+  AppState.settings.googleApiUrl = url;
+  saveSettings(AppState.settings);
+  showToast('บันทึกการตั้งค่า Google Sheet URL สำเร็จแล้ว');
+  if (url) manualSync();
+}
+
+function clearGoogleUrl() {
+  AppState.settings.googleApiUrl = '';
+  saveSettings(AppState.settings);
+  const input = document.getElementById('cfgGoogleUrl');
+  if (input) input.value = '';
+  showToast('ล้างการเชื่อมต่อ Google Sheet แล้ว (ทำงานในโหมดออฟไลน์)');
+}
+
+async function testGoogleConnection() {
+  const url = document.getElementById('cfgGoogleUrl').value.trim();
+  const resultBox = document.getElementById('testConnectionResult');
+  if (!url) {
+    showToast('กรุณากรอก URL ก่อนทดสอบ', 'error');
+    return;
+  }
+
+  resultBox.style.display = 'block';
+  resultBox.style.background = 'var(--bg-subtle)';
+  resultBox.style.color = 'var(--text-sub)';
+  resultBox.style.border = '1px solid var(--border)';
+  resultBox.textContent = '⏳ กำลังทดสอบเชื่อมต่อไปยัง Google Apps Script...';
+
+  const res = await window.StockAPI.testConnection(url);
+  if (res.success) {
+    resultBox.style.background = 'var(--primary-light)';
+    resultBox.style.color = 'var(--primary)';
+    resultBox.style.border = '1px solid rgba(4, 120, 87, 0.2)';
+    resultBox.textContent = '✓ ' + res.message;
+    showToast('เชื่อมต่อ Google Sheet สำเร็จ!');
+  } else if (res.isLibraryUrl) {
+    resultBox.style.background = 'var(--amber-bg)';
+    resultBox.style.color = 'var(--text-main)';
+    resultBox.style.border = '1px solid var(--amber-border)';
+    resultBox.innerHTML = `
+      <div style="font-weight:700;color:var(--amber);margin-bottom:6px">⚠️ ตรวจพบว่าเป็นลิงก์ Library ของ Google Apps Script</div>
+      <div style="font-size:12.5px;line-height:1.6;color:var(--text-sub)">
+        ลิงก์ที่คุณใส่เป็น URL แบบ <b>Library</b> ไม่ใช่ <b>Web App</b> ทำให้หน้าเว็บไม่สามารถดึงข้อมูลได้<br><br>
+        <b>วิธีรับ Web App URL ใน 1 นาที:</b><br>
+        1. คลิกเปิดสคริปต์ของคุณ: <a href="${res.editorUrl}" target="_blank" style="color:var(--primary);font-weight:700;text-decoration:underline">🔗 เปิดโปรเจกต์ Google Apps Script (คลิกที่นี่)</a><br>
+        2. กดปุ่มสีน้ำเงิน <b>"ทำให้ใช้งานได้" (Deploy) > "การทำให้ใช้งานได้รายการใหม่" (New deployment)</b><br>
+        3. กดรูปเฟือง ⚙️ ด้านซ้าย เลือก <b>"เว็บแอป" (Web app)</b> <i>(ไม่ใช่ Library)</i><br>
+        4. ตั้งค่า <b>ผู้ที่มีสิทธิ์เข้าถึง (Who has access): ทุกคน (Anyone)</b> แล้วกด <b>Deploy</b><br>
+        5. คัดลอก URL ที่ลงท้ายด้วย <code>/exec</code> มาวางในช่องนี้แล้วกดบันทึก
+      </div>
+    `;
+    showToast('โปรดเปลี่ยนเป็น Web App URL ตามคำแนะนำด้านล่าง', 'info');
+  } else {
+    resultBox.style.background = 'var(--red-bg)';
+    resultBox.style.color = 'var(--red)';
+    resultBox.style.border = '1px solid var(--red-border)';
+    resultBox.textContent = '✕ เกิดข้อผิดพลาด: ' + res.message;
+    showToast('ไม่สามารถเชื่อมต่อได้: ' + res.message, 'error');
+  }
+}
+
+function handleSaveProfile(e) {
+  e.preventDefault();
+  AppState.settings.companyName = document.getElementById('cfgCompanyName').value.trim();
+  AppState.settings.warehouseName = document.getElementById('cfgWarehouseName').value.trim();
+  AppState.settings.userName = document.getElementById('cfgUserName').value.trim();
+  saveSettings(AppState.settings);
+  showToast('บันทึกข้อมูลองค์กรเรียบร้อยแล้ว');
+}
+
+/* =====================================================================
+   Data Export / Import & Print
+   ===================================================================== */
+function exportDataJSON() {
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(AppState.db, null, 2));
+  const a = document.createElement('a');
+  a.href = dataStr;
+  a.download = `ledger_stock_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  showToast('ส่งออกไฟล์สำรอง JSON สำเร็จ');
+}
+
+function importDataJSON(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (Array.isArray(parsed.products)) {
+        AppState.db = parsed;
+        saveLocalData(AppState.db);
+        renderCurrentTab();
+        showToast('นำเข้าข้อมูลสำรองเรียบร้อยแล้ว');
+      } else {
+        throw new Error('โครงสร้างไฟล์ไม่ถูกต้อง');
+      }
+    } catch (err) {
+      showToast('ไม่สามารถนำเข้าไฟล์ได้: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function exportDataCSV() {
+  const headers = ['product_id', 'name', 'category', 'unit', 'qty', 'min_stock', 'price_per_unit', 'supplier', 'mfg_date', 'expiry_date'];
+  const rows = AppState.db.products.map(p => [
+    p.id, `"${(p.name || '').replace(/"/g, '""')}"`, `"${p.category || ''}"`, p.unit, p.current, p.min_stock || 5, p.price || 0, `"${p.supplier || ''}"`, p.mfg || '', p.expiry || ''
+  ]);
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stock_products_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  showToast('ดาวน์โหลดไฟล์ CSV สินค้าเรียบร้อย');
+}
+
+function exportHistoryCSV() {
+  const headers = ['date', 'product_name', 'type', 'qty', 'reason', 'note'];
+  const rows = AppState.db.tx.map(t => {
+    const p = AppState.db.products.find(x => x.id === t.pid);
+    return [
+      `"${formatDate(t.ts)}"`, `"${(p ? p.name : 'Unknown').replace(/"/g, '""')}"`, t.type, t.qty, `"${t.reason || ''}"`, `"${t.note || ''}"`
+    ];
+  });
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `stock_movements_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  showToast('ดาวน์โหลดประวัติรายการ CSV เรียบร้อย');
+}
+
+function resetDemoDataConfirm() {
+  if (confirm('คุณต้องการรีเซ็ตข้อมูลสินค้าและประวัติทั้งหมดกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?')) {
+    AppState.db = getSeedData();
+    saveLocalData(AppState.db);
+    renderCurrentTab();
+    showToast('รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว');
+  }
+}
+
+function printStockReport() {
+  window.print();
+}
+
+/* =====================================================================
+   App Startup
+   ===================================================================== */
+window.addEventListener('DOMContentLoaded', async () => {
+  initTheme();
+  applySettingsToUI();
+  renderCurrentTab();
+
+  // If a valid Google Sheet URL is present, attempt background sync
+  if (isGoogleConfigured()) {
+    manualSync();
+  }
+});
 </script>
 </body>
 </html>

@@ -1,48 +1,83 @@
-# Stock Management System
+# 📦 Ledger • ระบบจัดการคลังสินค้าและสต๊อกพัสดุ (Stock Management System)
 
-Static stock control web app with Google Sheet integration support.
+เว็บแอปพลิเคชันจัดการสินค้าคงคลัง สต๊อกพัสดุ และอุปกรณ์สำนักงาน รองรับการทำงานทั้งแบบ **ออฟไลน์ (Local Mode)** และ **เชื่อมต่อ Google Sheets (Cloud API)** พร้อมการวิเคราะห์ข้อมูลและส่งออกรายงาน
 
-## Features
-- Inventory overview dashboard
-- In/out stock movement logging
-- Manage products and quantities
-- Google Sheet-ready API flow
-- GitHub Pages deployment workflow
+---
 
-## Deploy to GitHub Pages
-1. Push this repo to GitHub
-2. Go to Repository Settings > Pages
-3. Source: GitHub Actions
-4. The workflow in `.github/workflows/deploy-pages.yml` will deploy automatically on every push to `main`
+## ✨ คุณสมบัติเด่น (Features)
+- 📊 **แดชบอร์ดภาพรวมคลัง**: ตรวจสอบจำนวนคงเหลือ, มูลค่ารวมสินค้าคงคลัง, สินค้าใกล้หมดอายุ และแจ้งเตือนเมื่อถึงจุดสั่งซื้อขั้นต่ำ
+- ⇄ **ระบบเบิก-จ่ายและรับเข้า**:
+  - 📤 **เบิกจ่ายสินค้า (OUT)**: พร้อมระบบคำนวณและป้องกันการเบิกเกินยอดคงเหลือจริง
+  - 📥 **รับเข้าสินค้าเดิม (Restock)**: เพิ่มยอดสต๊อกสินค้าที่มีรหัสอยู่แล้ว
+  - ✨ **รับสินค้าใหม่ (New SKU)**: สร้างรหัสสินค้าใหม่ พร้อมใส่รูปภาพ วันที่ผลิต (MFG) และวันหมดอายุ (EXP)
+- 📦 **จัดการรายการสินค้า**: เพิ่ม, แก้ไข, ลบรายการสินค้า และปรับยอดสต๊อกจากการตรวจนับ (Adjust Stock)
+- 📜 **ประวัติความเคลื่อนไหว**: บันทึก Log ทุกรายการรับเข้า-เบิกจ่าย ค้นหาและกรองตามประเภทได้ทันที
+- 📈 **กราฟและสถิติการวิเคราะห์**: สัดส่วนสินค้าตามหมวดหมู่, สินค้าที่มียอดเบิกใช้สูงสุด
+- 💾 **สำรองข้อมูล**: ส่งออก/นำเข้าไฟล์ JSON และดาวน์โหลดข้อมูลเป็นไฟล์ Excel/CSV
+- 🌓 **รองรับโหมดมืด (Dark Mode)** และรองรับการพิมพ์รายงานสต๊อก (Print Report)
 
-## Connect to Google Sheet
-1. Open a Google Sheet and create tabs:
-   - `products`
-   - `stock_movements`
-   - `suppliers`
-   - `settings`
-2. Open Extensions > Apps Script
-3. Paste the code from `google-apps-script.gs`
-4. Deploy as a Web App
-5. Copy the generated URL
-6. Add this before your app loads:
+---
 
-```html
-<script>
-  window.STOCK_API_URL = 'https://script.google.com/macros/s/XXXXXXXX/exec';
-</script>
-```
+## 🚀 วิธีเปิดใช้งานบนเครื่อง (Local Preview)
 
-7. Reload the page. The app will use the Google Sheet data automatically.
+สามารถเปิดไฟล์ `index.html` บนเว็บบราวเซอร์ได้ทันที หรือรันผ่าน Local Server:
 
-## Local preview
 ```bash
-python3 -m http.server 8000
+# ใช้ Python 3 เปิด Local Server
+python3 -m http.server 8080
 ```
-Then open:
-```text
-http://localhost:8000
-```
+จากนั้นเปิดบราวเซอร์ไปที่: [http://localhost:8080](http://localhost:8080)
 
-## Template file
-Use the CSV template in `GOOGLE_SHEET_TEMPLATE.csv` as a starting point for the sheet structure.
+---
+
+## ☁ ขั้นตอนการเชื่อมต่อ Google Sheets (Google Apps Script)
+
+ระบบสามารถเชื่อมต่อกับ Google Sheet เพื่อให้ผู้ใช้งานหลายคนดูข้อมูลร่วมกันได้ โดยทำตามขั้นตอนดังนี้:
+
+### ขั้นตอนที่ 1: สร้าง Google Sheet
+1. เปิด [Google Sheets](https://sheets.new) แล้วสร้างสเปรดชีตใหม่
+2. ตั้งชื่อไฟล์ เช่น `ระบบสต๊อกสินค้า Ledger`
+
+### ขั้นตอนที่ 2: วางสคริปต์ Google Apps Script
+1. ไปที่เมนู **ส่วนขยาย (Extensions) > Apps Script**
+2. ลบโค้ดเริ่มต้นทั้งหมดในไฟล์ `Code.gs`
+3. คัดลอกโค้ดทั้งหมดจากไฟล์ `google-apps-script.gs` ในโปรเจกต์นี้ไปวางแทนที่
+4. กดบันทึก (รูปแผ่นดิสก์ 💾 หรือ `Ctrl + S` / `Cmd + S`)
+
+### ขั้นตอนที่ 3: เผยแพร่เว็บแอป (Deploy Web App)
+1. กดปุ่มสีน้ำเงิน **"ทำให้ใช้งานได้" (Deploy) > "การทำให้ใช้งานได้รายการใหม่" (New deployment)**
+2. คลิกรูปเฟืองด้านซ้าย เลือกประเภทเป็น **"เว็บแอป" (Web app)**
+3. กำหนดค่าดังนี้:
+   - **คำอธิบาย (Description):** `Stock API v2`
+   - **ดำเนินการในฐานะ (Execute as):** `ฉัน (Me)`
+   - **ผู้ที่มีสิทธิ์เข้าถึง (Who has access):** `ทุกคน (Anyone)` *(สำคัญมาก! ต้องเลือก Anyone เพื่อให้เว็บแอปเรียกใช้งานได้โดยไม่ติดสิทธิ์)*
+4. กดปุ่ม **"ทำให้ใช้งานได้" (Deploy)**
+5. ให้สิทธิ์การเข้าถึง (Authorize access) ตามขั้นตอนของ Google
+6. คัดลอก **URL เว็บแอป (Web App URL)** ที่ลงท้ายด้วย `/exec`
+
+### ขั้นตอนที่ 4: นำ URL มาใส่ในระบบสต๊อก
+1. เปิดหน้าเว็บระบบสต๊อก (`index.html`)
+2. ไปที่แท็บ **⚙ ตั้งค่า (Settings)**
+3. วาง URL ลงในช่อง **Google Apps Script Web App URL**
+4. กดปุ่ม **"🧪 ทดสอบการเชื่อมต่อ"** เพื่อตรวจสอบความถูกต้อง
+5. กดปุ่ม **"💾 บันทึก URL"** ระบบจะเริ่มซิงค์ข้อมูลกับ Google Sheet ทันที!
+
+---
+
+## 🌐 การติดตั้งขึ้น GitHub Pages
+
+โปรเจกต์นี้มาพร้อม GitHub Actions Workflow สำหรับ Deploy อัตโนมัติ:
+1. สร้าง Repository บน GitHub และ Push โค้ดทั้งหมดขึ้นไป
+2. ไปที่ **Settings > Pages** ของ Repository
+3. ในส่วน **Build and deployment > Source** ให้เลือกเป็น **GitHub Actions**
+4. ทุกครั้งที่มีการ Push โค้ดขึ้น Branch `main` ระบบจะ Deploy ขึ้น GitHub Pages ให้โดยอัตโนมัติ
+
+---
+
+## 📁 โครงสร้างไฟล์ในโปรเจกต์
+- `index.html`: หน้าหลักของระบบสต๊อกสินค้า พร้อมระบบจัดการ เบิก-จ่าย และรายงานครบวงจร
+- `stock.html`: หน้ารายงานและกราฟสถิติขั้นสูง (Chart.js Analytics Dashboard)
+- `google-sheet-client.js`: ไลบรารีฝั่ง Client สำหรับสื่อสารกับ Google Apps Script แบบปลอดปัญหา CORS
+- `google-apps-script.gs`: โค้ด Backend Apps Script สำหรับติดตั้งบน Google Sheets
+- `GOOGLE_SHEET_TEMPLATE.csv`: ตัวอย่างโครงสร้างหัวตารางและข้อมูลตัวอย่างสำหรับ Google Sheets
+- `.github/workflows/deploy-pages.yml`: GitHub Actions สำหรับ Deploy Static Site อัตโนมัติ
