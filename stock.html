@@ -204,8 +204,17 @@ header {
 <script>
 function loadDB() {
   try {
-    const raw = localStorage.getItem('ledger_stock_v2') || localStorage.getItem('ledger_stock_v1');
+    const raw = localStorage.getItem('ledger_stock_v3');
     if (raw) return JSON.parse(raw);
+    const older = localStorage.getItem('ledger_stock_v2') || localStorage.getItem('ledger_stock_v1');
+    if (older) {
+      const parsed = JSON.parse(older);
+      const mockIds = new Set(['P001', 'P002', 'P003', 'P004', 'P005', 'P006', 'P007', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+      return {
+        products: (parsed.products || []).filter(p => !mockIds.has(p.id)),
+        tx: (parsed.tx || []).filter(t => !mockIds.has(t.pid) && !t.id.startsWith('t') && !t.id.startsWith('T00'))
+      };
+    }
   } catch(e){}
   return { products: [], tx: [] };
 }

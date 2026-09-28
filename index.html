@@ -1009,7 +1009,7 @@ footer.bottom-bar {
         <input id="globalSearchInput" placeholder="ค้นหาชื่อสินค้า, SKU, หมวดหมู่..." oninput="handleSearch()">
       </div>
       <button class="icon-btn" onclick="printStockReport()" title="พิมพ์รายงานสินค้า">🖨</button>
-      <button class="icon-btn" onclick="resetDemoDataConfirm()" title="รีเซ็ตข้อมูลตัวอย่าง">⟳</button>
+      <button class="icon-btn" onclick="clearAllLocalDataConfirm()" title="ล้างข้อมูลสต๊อกทั้งหมดในเครื่อง">🗑</button>
     </div>
   </div>
 
@@ -1039,32 +1039,15 @@ footer.bottom-bar {
 /**
  * Application Core & State Management
  */
-const STORAGE_KEY_DATA = 'ledger_stock_v2';
+const STORAGE_KEY_DATA = 'ledger_stock_v3';
 const STORAGE_KEY_SETTINGS = 'ledger_settings_v2';
 const STORAGE_KEY_THEME = 'ledger_theme';
 
-// Default Sample Data
+// Clean initial data (No mockup data)
 function getSeedData() {
-  const now = Date.now();
-  const day = 86400000;
   return {
-    products: [
-      { id: 'P001', name: 'ปุ๋ยอินทรีย์เคมี 16-16-16', category: 'ปุ๋ย', unit: 'กระสอบ', initial: 100, current: 78, min_stock: 15, price: 650, supplier: 'บจก. ก้าวหน้าการเกษตร', mfg: '2026-06-01', expiry: '2027-06-01', img: '' },
-      { id: 'P002', name: 'เคมีภัณฑ์ปรับปรุงคุณภาพดิน pH12', category: 'เคมีภัณฑ์', unit: 'กระสอบ', initial: 50, current: 24, min_stock: 10, price: 480, supplier: 'หจก. ทรัพยากรดิน', mfg: '2026-05-10', expiry: '2026-11-15', img: '' },
-      { id: 'P003', name: 'มูลชี้วัวอัดเม็ด SPRING', category: 'ปุ๋ย', unit: 'กระสอบ', initial: 40, current: 0, min_stock: 8, price: 290, supplier: 'ฟาร์มสุขใจ', mfg: '2026-04-05', expiry: '2026-10-05', img: '' },
-      { id: 'P004', name: 'ฮอร์โมนพืช บำรุงรากและผล', category: 'เคมีภัณฑ์', unit: 'แกลลอน', initial: 60, current: 42, min_stock: 10, price: 520, supplier: 'บจก. เกษตรไทยอินเตอร์', mfg: '2026-07-20', expiry: '2027-01-20', img: '' },
-      { id: 'P005', name: 'ปุ๋ยอินทรีย์ละลายช้า ออสโมโค้ท', category: 'ปุ๋ย', unit: 'กล่อง', initial: 30, current: 16, min_stock: 5, price: 360, supplier: 'บจก. ก้าวหน้าการเกษตร', mfg: '2026-04-30', expiry: '2026-10-30', img: '' },
-      { id: 'P006', name: 'สารสกัดชีวภาพ ฮูมิคส์เข้มข้น', category: 'เคมีภัณฑ์', unit: 'ขวด', initial: 45, current: 8, min_stock: 10, price: 220, supplier: 'หจก. ไบโอฟาร์ม', mfg: '2026-03-20', expiry: '2026-09-20', img: '' },
-      { id: 'P007', name: 'ถุงเพาะชำสีดำ 4x6 นิ้ว', category: 'อุปกรณ์', unit: 'มัด', initial: 120, current: 95, min_stock: 20, price: 85, supplier: 'โรงงานพลาสติกไทย', mfg: '2026-01-15', expiry: '', img: '' }
-    ],
-    tx: [
-      { id: 'T001', pid: 'P001', type: 'in', qty: 100, reason: 'รับสินค้าเริ่มต้น', note: 'ล็อตรับเข้าเริ่มต้นปี', ts: now - (15 * day) },
-      { id: 'T002', pid: 'P001', type: 'out', qty: 22, reason: 'เบิกจ่าย', note: 'ฝ่ายผลิตแปลงทดลอง', ts: now - (10 * day) },
-      { id: 'T003', pid: 'P002', type: 'out', qty: 26, reason: 'เบิกจ่าย', note: 'โครงการฟื้นฟูดินแปลง 4', ts: now - (7 * day) },
-      { id: 'T004', pid: 'P003', type: 'out', qty: 40, reason: 'เบิกจ่าย', note: 'จัดส่งเกษตรกรชุมชน', ts: now - (5 * day) },
-      { id: 'T005', pid: 'P006', type: 'out', qty: 37, reason: 'เบิกจ่าย', note: 'ฉีดพ่นสวนผลไม้', ts: now - (2 * day) },
-      { id: 'T006', pid: 'P007', type: 'out', qty: 25, reason: 'เบิกจ่าย', note: 'เพาะกล้าไม้รอบใหม่', ts: now - (1 * day) }
-    ]
+    products: [],
+    tx: []
   };
 }
 
@@ -1095,18 +1078,26 @@ function loadLocalData() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY_DATA);
     if (raw) return JSON.parse(raw);
-    // Backward compatibility with v1
-    const v1 = localStorage.getItem('ledger_stock_v1');
-    if (v1) {
-      const parsed = JSON.parse(v1);
-      if (parsed.products) return parsed;
+
+    // If older versions exist in localStorage, clean out known mock items
+    const older = localStorage.getItem('ledger_stock_v2') || localStorage.getItem('ledger_stock_v1');
+    if (older) {
+      const parsed = JSON.parse(older);
+      const mockIds = new Set(['P001', 'P002', 'P003', 'P004', 'P005', 'P006', 'P007', 'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7']);
+      const userProducts = (parsed.products || []).filter(p => !mockIds.has(p.id));
+      const userTx = (parsed.tx || []).filter(t => !mockIds.has(t.pid) && !t.id.startsWith('t') && !t.id.startsWith('T00'));
+      const cleanDb = { products: userProducts, tx: userTx };
+      saveLocalData(cleanDb);
+      localStorage.removeItem('ledger_stock_v2');
+      localStorage.removeItem('ledger_stock_v1');
+      return cleanDb;
     }
   } catch (e) {
     console.error('Failed to load local DB:', e);
   }
-  const seed = getSeedData();
-  saveLocalData(seed);
-  return seed;
+  const clean = getSeedData();
+  saveLocalData(clean);
+  return clean;
 }
 
 function saveLocalData(db) {
@@ -2641,7 +2632,7 @@ function renderSettingsTab(container) {
           <button class="btn ghost sm" onclick="exportDataJSON()">📥 ส่งออก JSON</button>
           <button class="btn ghost sm" onclick="exportDataCSV()">📊 ส่งออก CSV</button>
           <button class="btn ghost sm" onclick="document.getElementById('importFileInput').click()">📤 นำเข้า JSON</button>
-          <button class="btn red sm" onclick="resetDemoDataConfirm()">⟳ รีเซ็ตข้อมูล</button>
+          <button class="btn red sm" onclick="clearAllLocalDataConfirm()">🗑 ล้างข้อมูลทั้งหมด</button>
         </div>
         <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="importDataJSON(event)">
       </div>
@@ -2793,12 +2784,12 @@ function exportHistoryCSV() {
   showToast('ดาวน์โหลดประวัติรายการ CSV เรียบร้อย');
 }
 
-function resetDemoDataConfirm() {
-  if (confirm('คุณต้องการรีเซ็ตข้อมูลสินค้าและประวัติทั้งหมดกลับเป็นข้อมูลตัวอย่างเริ่มต้นใช่หรือไม่?')) {
-    AppState.db = getSeedData();
+function clearAllLocalDataConfirm() {
+  if (confirm('คุณต้องการล้างข้อมูลสินค้าและประวัติทั้งหมดในเครื่องออกใช่หรือไม่?')) {
+    AppState.db = { products: [], tx: [] };
     saveLocalData(AppState.db);
     renderCurrentTab();
-    showToast('รีเซ็ตข้อมูลตัวอย่างเรียบร้อยแล้ว');
+    showToast('ล้างข้อมูลสต๊อกทั้งหมดในเครื่องเรียบร้อยแล้ว');
   }
 }
 
