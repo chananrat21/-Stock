@@ -261,6 +261,27 @@ async function hydrateFromGoogleIfAvailable(){
   }
 }
 
+async function postGoogleData(payload, failureMessage){
+  try{
+    const response=await fetch(GOOGLE_API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify(payload)
+    });
+    const text=await response.text();
+    let result;
+    try{ result=JSON.parse(text); }
+    catch(e){ throw new Error(`เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง (HTTP ${response.status})`); }
+    if(!response.ok) throw new Error(`HTTP ${response.status}`);
+    if(!result||!result.success) throw new Error(result&&result.message?result.message:'ไม่สามารถบันทึกข้อมูลได้');
+    return result;
+  }catch(error){
+    console.error('Google Sheets request failed:',error);
+    alert(`${failureMessage}: ${error&&error.message?error.message:'ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง'}`);
+    return null;
+  }
+}
+
 function resetDemo(){ DB=seedData(); saveData(DB); render(); }
 
 function fmt(n){ return new Intl.NumberFormat('th-TH').format(n); }
@@ -471,16 +492,8 @@ async function saveMove(){
         mfg_date: document.getElementById('mvDateStart').value || '',
         expiry_date: document.getElementById('mvDateEnd').value || ''
       };
-      const res = await fetch(`${GOOGLE_API_URL}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await res.json();
-      if (!result || !result.success) {
-        alert('เพิ่มข้อมูลไปยัง Google Sheet ไม่สำเร็จ');
-        return;
-      }
+      const result=await postGoogleData(payload,'เพิ่มข้อมูลไปยัง Google Sheet ไม่สำเร็จ');
+      if(!result) return;
       await hydrateFromGoogleIfAvailable();
       showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
       return;
@@ -490,10 +503,7 @@ async function saveMove(){
     const p=DB.products.find(x=>x.id===pid);
     if(!p){ alert('ไม่พบสินค้า'); return; }
     if(qty>p.current){ alert('จำนวนที่เบิกมากกว่ายอดคงเหลือในระบบ'); return; }
-    const res = await fetch(`${GOOGLE_API_URL}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const result=await postGoogleData({
         type: 'addMovement',
         product_id: pid,
         movement_type: 'OUT',
@@ -501,13 +511,8 @@ async function saveMove(){
         reason: 'เบิกสินค้า',
         note: note || 'เบิกจ่ายสินค้า',
         created_by: 'web_user'
-      })
-    });
-    const result = await res.json();
-    if (!result || !result.success) {
-      alert('บันทึกรายการเบิกสินค้าไม่สำเร็จ');
-      return;
-    }
+      },'บันทึกรายการเบิกสินค้าไม่สำเร็จ');
+    if(!result) return;
     await hydrateFromGoogleIfAvailable();
     showDoneOverlay('บันทึกรายการเรียบร้อยแล้ว');
     return;
@@ -592,16 +597,8 @@ async function addProduct(){
       image_url: document.getElementById('npImgBox').dataset.data || '',
       expiry_date: document.getElementById('npExpiry').value || ''
     };
-    const res = await fetch(`${GOOGLE_API_URL}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
-    if (!result || !result.success) {
-      alert('เพิ่มสินค้าไปยัง Google Sheet ไม่สำเร็จ');
-      return;
-    }
+    const result=await postGoogleData(payload,'เพิ่มสินค้าไปยัง Google Sheet ไม่สำเร็จ');
+    if(!result) return;
     await hydrateFromGoogleIfAvailable();
     showDoneOverlay('เพิ่มสินค้าเรียบร้อยแล้ว');
     return;
@@ -672,16 +669,8 @@ async function saveEditProduct(id){
       mfg_date: document.getElementById('edMfg').value || '',
       expiry_date: document.getElementById('edExpiry').value || ''
     };
-    const res = await fetch(`${GOOGLE_API_URL}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
-    if (!result || !result.success) {
-      alert('แก้ไขสินค้าใน Google Sheet ไม่สำเร็จ');
-      return;
-    }
+    const result=await postGoogleData(payload,'แก้ไขสินค้าใน Google Sheet ไม่สำเร็จ');
+    if(!result) return;
     await hydrateFromGoogleIfAvailable();
     showDoneOverlay('บันทึกการแก้ไขเรียบร้อยแล้ว');
     return;
