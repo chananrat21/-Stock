@@ -151,9 +151,10 @@ select.prodpick{background:var(--bg2)}
 
 <script>
 /* ---------- Data layer ---------- */
+window.STOCK_API_URL = window.STOCK_API_URL || 'https://script.google.com/macros/s/AKfycbyDoHMHze1w-118KKqHZ21KlEdC8Is8nhR8s5VWRTavt38UwYS-WjuqFcLwtzY22M9vjQ/exec';
 const LS_KEY='ledger_stock_v1';
 const GOOGLE_API_URL = (window.STOCK_API_URL || '').trim();
-const USE_GOOGLE_SHEET = !!GOOGLE_API_URL && GOOGLE_API_URL !== 'https://script.google.com/macros/s/AKfycbwEKpIQF1AeWHRUXUCxF454GJpQ5W_uqoSRK87hoXS-FbXnH9fprANKg_WYHJiJ_KJ9/exec';
+const USE_GOOGLE_SHEET = !!GOOGLE_API_URL && !GOOGLE_API_URL.startsWith('PASTE_') && !GOOGLE_API_URL.includes('YOUR_GOOGLE_WEB_APP_URL');
 
 function normalizeGoogleProduct(row){
   const qty = Number(row.qty ?? row.current ?? 0);
